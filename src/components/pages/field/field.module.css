@@ -1,0 +1,33 @@
+.container {
+	margin: 10% 0 0 0;
+}
+
+.field_container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	margin: 0 auto 15px auto;
+}
+
+.item {
+	box-sizing: border-box;
+	height: 60px;
+	width: 60px;
+	background: #fff;
+	border: 1px solid #565675;
+}
+
+.footer {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0 5px;
+}
+
+.button {
+	width: 180px;
+	height: 20px;
+	font-size: 12px;
+}

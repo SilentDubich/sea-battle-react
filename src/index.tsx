@@ -1,12 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import { Main } from './Main';
+import { Main } from './components/pages/main/main';
+import { Difficulty } from './components/pages/difficulty/difficulty';
+import { BackButton } from './components/back-button';
+import { FieldChoose } from './components/pages/field-choose/field-choose';
+import { Field } from './components/pages/field/field';
 import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
 	<React.StrictMode>
+		<BackButton/>
 		<Main />
+		<Difficulty />
+		<FieldChoose/>
+		<Field size={8}/>
 	</React.StrictMode>,
 	document.getElementById('root')
 );
