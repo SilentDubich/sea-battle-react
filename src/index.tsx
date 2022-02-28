@@ -1,21 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import { Main } from './components/pages/main/main';
-import { Difficulty } from './components/pages/difficulty/difficulty';
-import { BackButton } from './components/back-button';
-import { FieldChoose } from './components/pages/field-choose/field-choose';
-import { Field } from './components/pages/field/field';
+import BackButton from './components/back-button';
 import reportWebVitals from './reportWebVitals';
+import {Provider} from 'react-redux';
+import {store} from './date-base/store';
+import App from './components/app';
 
 ReactDOM.render(
-	<React.StrictMode>
+	<Provider store={store}>
 		<BackButton/>
-		<Main />
-		<Difficulty />
-		<FieldChoose/>
-		<Field size={8}/>
-	</React.StrictMode>,
+		<App/>
+	</Provider>,
 	document.getElementById('root')
 );
 

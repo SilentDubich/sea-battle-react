@@ -2,12 +2,19 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	margin: 10% 0 0 0;
+}
+
+.main_title,
+.button,
+.item {
+	color: #f4f4f4;
 }
 
 .main_title {
 	font-size: 2rem;
 	font-weight: 700;
-	margin: 10% 0 15px 0;
+	margin: 0 0 15px 0;
 	letter-spacing: .25em;
 }
 
@@ -27,6 +34,8 @@
 }
 
 .button {
+	width: 260px;
+	height: 20px;
 	border-radius: 12px;
 	border: 1px solid #565675;
 	display: flex;
@@ -38,4 +47,12 @@
 
 .button:hover {
 	background: #565675;
+}
+
+.footer {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0 5px;
 }
