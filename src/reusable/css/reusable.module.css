@@ -9,6 +9,7 @@
 .button,
 .item {
 	color: #f4f4f4;
+	user-select: none;
 }
 
 .main_title {

@@ -13,3 +13,7 @@
 	background: #fff;
 	border: 1px solid #565675;
 }
+
+.ship {
+	background: url('/src/imgs/ship.svg') no-repeat center/contain, #fff;
+}

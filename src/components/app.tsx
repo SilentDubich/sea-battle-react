@@ -3,10 +3,11 @@ import Main from './pages/main/main';
 import {GameStateType} from '../date-base/reducers/game';
 import Difficulty from './pages/difficulty/difficulty';
 import FieldChoose from './pages/field-choose/field-choose';
-import {FieldPrepare} from './pages/field-prepare/field-prepare';
+import FieldPrepare from './pages/field-prepare/field-prepare';
 import {compose} from 'redux';
 import {connect} from 'react-redux';
 import {AppStateType} from '../date-base/store';
+import BackButton from './back-button';
 
 type PropsType = {
 	gameState: GameStateType
@@ -22,6 +23,7 @@ const App: FC<PropsType> = ({ gameState }) => {
 	})();
 	return (
 		<>
+			<BackButton/>
 			{ componentToRender }
 		</>
 	);
