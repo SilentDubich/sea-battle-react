@@ -96,7 +96,7 @@ export const gameReducer = (state = defaultState, action: GameActionType): GameS
 			return state;
 	}
 }
-
+const allLoc: Array<string> = [];
 const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
 	const shipsParams: ShipsParamsType = {
 		locations: {},
@@ -107,105 +107,110 @@ const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
 	const possibleShips = getPossibleShips(fieldSize);
 	possibleShips.forEach((possibleShip, i) => {
 		const shipLocations: Array<string> | null = createShip(possibleShip, possibleLocations, fieldSize);
-		// if (!shipLocations) console.log('oooops')
-		// if (!shipLocations) return createShips(fieldSize);
-		// const ship: ShipType = {
-		// 	hits: [],
-		// 	size: possibleShip
-		// };
-		//
-		// shipLocations.forEach(shipLocation => {
-		// 	shipsParams.locations[shipLocation] = i;
-		// });
-		//
-		// shipsParams.ships[i] = ship;
+		if (!shipLocations) return createShips(fieldSize);
+		const ship: ShipType = {
+			hits: [],
+			size: possibleShip
+		};
+
+		shipLocations.forEach(shipLocation => {
+			shipsParams.locations[shipLocation] = i;
+		});
+
+		shipsParams.ships[i] = ship;
 	});
+	// @ts-ignore
+	console.log('allLoc', allLoc.sort((a, b) => b - a))
 	return shipsParams;
 };
+
 
 const createShip = (shipSize: number, possibleLocations: Array<string>, fieldSize: FieldSizeType) => {
 	if (!fieldSize || !shipSize || !possibleLocations) return null;
 	const { ver, hor } = getLocationsMap(possibleLocations);
-	type UpdatedVerType = {
-		[key:string]: Array<Array<number>> | null
-	}
-	const updatedVer: UpdatedVerType = {};
-	const updatedHor: UpdatedVerType = {};
-	for (const [ key, value ] of Object.entries(ver)) {
-		updatedVer[key] = getVariantsToPlaceShip(shipSize, value);
-	}
-	for (const [ key, value ] of Object.entries(hor)) {
-		updatedHor[key] = getVariantsToPlaceShip(shipSize, value);
-	}
-	debugger
-	return null;
-	// let possibleDirections = getPossibleDirections(fieldSize, shipSize);
-	// if (!possibleDirections) {
-	// 	let tryCounter = 0;
-	// 	while (tryCounter < 10) {
-	// 		possibleDirections = getPossibleDirections(fieldSize, shipSize);
-	// 		if (!possibleDirections) tryCounter++;
-	// 		if (tryCounter > 10) return null;
-	// 		if (possibleDirections) break;
-	// 	}
-	// }
-	// if (!possibleDirections) return null;
-	// const { generateDirections, row, col } = possibleDirections;
-	//
-	// const directionNumber = Math.floor(Math.random() * generateDirections.length);
-	// const direction = generateDirections[directionNumber];
-	// let generatedLocations = generateLocations(direction, row, col, shipSize, possibleLocations);
-	// if (!generatedLocations) {
-	// 	generateDirections.splice(directionNumber, 1);
-	// 	if (!generateDirections.length) return null;
-	// 	let tryCounter = 0;
-	// 	while (tryCounter < 10) {
-	// 		const directionNumber = Math.floor(Math.random() * generateDirections.length);
-	// 		const direction = generateDirections[directionNumber];
-	// 		generatedLocations = generateLocations(direction, row, col, shipSize, possibleLocations);
-	// 		if (!generatedLocations) {
-	// 			generateDirections.splice(directionNumber, 1);
-	// 			tryCounter++;
-	// 		}
-	// 		if (generatedLocations) break;
-	// 	}
-	// }
-	// if (!generatedLocations) return null;
-	//
-	// const { shipLocations, locationsToDelete } = generatedLocations;
-	//
-	// locationsToDelete.forEach(locationToDelete => {
-	// 	const index = possibleLocations.findIndex(possibleLocation => possibleLocation === locationToDelete);
-	// 	if (index !== -1) possibleLocations.splice(index, 1);
-	// });
-	//
-	// return shipLocations;
+	const updatedVer: VariantsToPlaceShipsType = getVariantsToPlaceShip(ver, shipSize);
+	const updatedHor: VariantsToPlaceShipsType = getVariantsToPlaceShip(hor, shipSize);
+	if (!updatedVer && !updatedHor) return null;
+	const verKeys = Object.keys(updatedVer);
+	const horKeys = Object.keys(updatedHor);
+
+	const row = Math.floor(Math.random() * horKeys.length);
+	const col = Math.floor(Math.random() * verKeys.length);
+	const verticalVariants = updatedVer[verKeys[col]];
+	const horizontalVariants = updatedHor[horKeys[row]];
+	const randomVerticalVariantIndex = Math.floor(Math.random() * verticalVariants.length);
+	const randomHorizontalVariantIndex = Math.floor(Math.random() * horizontalVariants.length);
+	const isVertical = Math.random() >= .5;
+	const locationToPlace = (() => {
+		if (isVertical) {
+			const variants = verticalVariants[randomVerticalVariantIndex];
+			return variants.map(variant => `${ variant }${ col }`);
+		}
+		const variants = horizontalVariants[randomHorizontalVariantIndex];
+		return variants.map(variant => `${ row }${ variant }`);
+	})();
+
+	const borders: Array<string> = [];
+	locationToPlace.forEach((locationCoordination, i) => {
+		const firstNumber = +locationCoordination[0];
+		const secondNumber = +locationCoordination[1];
+		const isFirst = i === 0;
+		const isLast = i === locationToPlace.length - 1;
+		const secondNumberLeft = secondNumber - 1;
+		const secondNumberRight = secondNumber + 1;
+		const firstNumberTop = firstNumber - 1;
+		const firstNumberBottom = firstNumber + 1;
+		const isValid = (first: number, second: number) => {
+			if (first < 0 || first >= 10) return false;
+			if (second < 0 || second >= 10) return false;
+			return true;
+		};
+		if (isVertical) {
+			if (isFirst || isLast) {
+				const value = isFirst ? firstNumberTop : firstNumberBottom;
+				isValid(value, secondNumber) && borders.push(`${ value }${ secondNumber }`);
+				isValid(value, secondNumberLeft) && borders.push(`${ value }${ secondNumberLeft }`);
+				isValid(value, secondNumberRight) && borders.push(`${ value }${ secondNumberRight }`);
+			}
+
+			const borderLeft = `${ firstNumber }${ secondNumberLeft }`;
+			const borderRight = `${ firstNumber }${ secondNumberRight }`;
+			isValid(firstNumber, secondNumberLeft) && borders.push(borderLeft);
+			isValid(firstNumber, secondNumberRight) && borders.push(borderRight);
+
+		}
+		else {
+			if (isFirst || isLast) {
+				const value = isFirst ? secondNumberLeft : secondNumberRight;
+				isValid(firstNumber, value) && borders.push(`${ firstNumber }${ value }`);
+				isValid(firstNumberTop, value) && borders.push(`${ firstNumberTop }${ value }`);
+				isValid(firstNumberBottom, value) && borders.push(`${ firstNumberBottom }${ value }`);
+			}
+			const borderTop = `${ firstNumberTop }${ secondNumber }`;
+			const borderBottom = `${ firstNumberBottom }${ secondNumber }`;
+			isValid(firstNumberTop, secondNumberLeft) && borders.push(borderTop);
+			isValid(firstNumberBottom, secondNumberRight) && borders.push(borderBottom);
+
+		}
+	});
+	const locationsToDelete = [ ...borders, ...locationToPlace ];
+	console.group();
+	console.log('locationsToDelete', locationsToDelete);
+	console.log('borders', borders);
+	console.log('locationToPlace', locationToPlace);
+	console.log('isVertical', isVertical);
+	console.log('possibleLocations', [ ...possibleLocations ]);
+
+	locationsToDelete.forEach(locationToDelete => {
+		const index = possibleLocations.findIndex(possibleLocation => possibleLocation === locationToDelete);
+		if (index !== -1) possibleLocations.splice(index, 1);
+	});
+	console.log('possibleLocations', possibleLocations);
+	console.groupEnd();
+	allLoc.push(...locationToPlace);
+	return locationToPlace;
 };
 
-type PossibleDirectionsType = {
-	generateDirections: Array<string>,
-	row: number,
-	col: number
-}
-
-const getPossibleDirections = (fieldSize: FieldSizeType, shipSize: number): PossibleDirectionsType | null => {
-	if (!fieldSize || !shipSize) return null;
-
-	const row = Math.floor(Math.random() * fieldSize);
-	const col = Math.floor(Math.random() * fieldSize);
-
-	const generateDirections = [];
-	const canGenerateUp = row - shipSize >= 0;
-	const canGenerateLeft = col - shipSize >= 0;
-	const canGenerateRight = col + shipSize < fieldSize;
-	const canGenerateDown = row + shipSize < fieldSize;
-
-	if (canGenerateUp) generateDirections.push('up');
-	if (canGenerateRight) generateDirections.push('right');
-	if (canGenerateDown) generateDirections.push('down');
-	if (canGenerateLeft) generateDirections.push('left');
-	return { generateDirections, row, col };
-};
 
 type LocationsMapType = {
 	[key:number]: Array<number>
@@ -225,7 +230,7 @@ const getLocationsMap = (possibleLocations: Array<string>): { hor: LocationsMapT
 	return { hor, ver };
 };
 
-const getVariantsToPlaceShip = (shipSize: number, locationsMap: Array<number>): Array<Array<number>> | null => {
+const getPossibleLocationsToPlaceShip = (shipSize: number, locationsMap: Array<number>): Array<Array<number>> | null => {
 	const variants: Array<Array<number>> = [];
 	let temp: Array<number> = [];
 	let prevValue: number = 0;
@@ -257,104 +262,15 @@ const getVariantsToPlaceShip = (shipSize: number, locationsMap: Array<number>): 
 	return variants;
 };
 
-const generateLocations = (direction: string, row: number, col: number, shipSize: number, possibleLocations: Array<string>): { shipLocations: Array<string>, locationsToDelete: Array<string> } | null => {
-	const shipLocations: Array<string> = [];
-	const locationsToDelete: Array<string> = [];
-	let upBorder, downBorder, leftBorder, rightBorder, upLeftBorder, upRightBorder, downLeftBorder, downRightBorder;
-	console.group();
-	console.log('direction', direction);
-	console.log('row', row);
-	console.log('col', col);
-	console.log('shipSize', shipSize);
-	console.log('possibleLocations', possibleLocations);
-	console.groupEnd();
-	switch (direction) {
-		case 'up':
-			upBorder = (row - shipSize).toString() + col.toString();
-			upLeftBorder = (row - shipSize).toString() + (col - 1).toString();
-			upRightBorder = (row - shipSize).toString() + (col + 1).toString();
+type VariantsToPlaceShipsType = {
+	[key:string]: Array<Array<number>>
+};
 
-			downBorder = (row + 1).toString() + col.toString();
-			downLeftBorder = (row + 1).toString() + (col - 1).toString();
-			downRightBorder = (row + 1).toString() + (col + 1).toString();
-
-			locationsToDelete.push(upBorder, upLeftBorder, upRightBorder, downBorder, downLeftBorder, downRightBorder);
-			for (let i = 0; i < shipSize; i++) {
-				const location = (row - i).toString() + col.toString();
-				console.log('(possibleLocations.indexOf(location) === -1', possibleLocations.indexOf(location) === -1)
-				if (possibleLocations.indexOf(location) === -1) return null;
-				leftBorder = (row - i).toString() + (col - 1).toString();
-				rightBorder = (row - i).toString() + (col + 1).toString();
-
-				shipLocations.push(location);
-				locationsToDelete.push(location, leftBorder, rightBorder);
-			}
-			break;
-		case 'right':
-			leftBorder = row.toString() + (col - 1).toString();
-			upLeftBorder = (row + 1).toString() + (col - 1).toString();
-			downLeftBorder = (row - 1).toString() + (col - 1).toString();
-
-			rightBorder = row.toString() + (col + shipSize).toString();
-			upRightBorder = (row + 1).toString() + (col + shipSize).toString();
-			downRightBorder = (row - 1).toString() + (col + shipSize).toString();
-
-			locationsToDelete.push(leftBorder, upLeftBorder, downLeftBorder, rightBorder, upRightBorder, downRightBorder);
-			for (let i = 0; i < shipSize; i++) {
-				const location = row.toString() + (col + i).toString();
-				console.log('(possibleLocations.indexOf(location) === -1', possibleLocations.indexOf(location) === -1)
-				if (possibleLocations.indexOf(location) === -1) return null;
-				upBorder = (row + 1).toString() + (col + i).toString();
-				downBorder = (row - 1).toString() + (col + i).toString();
-
-				shipLocations.push(location);
-				locationsToDelete.push(location, upBorder, downBorder);
-			}
-			break;
-		case 'down':
-			upBorder = (row - 1).toString() + col.toString();
-			upLeftBorder = (row - 1).toString() + (col - 1).toString();
-			upRightBorder = (row - 1).toString() + (col + 1).toString();
-
-			downBorder = (row + shipSize).toString() + col.toString();
-			downLeftBorder = (row + shipSize).toString() + (col - 1).toString();
-			downRightBorder = (row + shipSize).toString() + (col + 1).toString();
-
-			locationsToDelete.push(upBorder, upLeftBorder, upRightBorder, downBorder, downLeftBorder, downRightBorder);
-			for (let i = 0; i < shipSize; i++) {
-				const location = (row + i).toString() + col.toString();
-				console.log('(possibleLocations.indexOf(location) === -1', possibleLocations.indexOf(location) === -1)
-				if (possibleLocations.indexOf(location) === -1) return null;
-				leftBorder = (row + i).toString() + (col - 1).toString();
-				rightBorder = (row + i).toString() + (col + 1).toString();
-
-				shipLocations.push(location);
-				locationsToDelete.push(location, leftBorder, rightBorder);
-			}
-			break;
-		case 'left':
-			leftBorder = row.toString() + (col - shipSize).toString();
-			upLeftBorder = (row + 1).toString() + (col - shipSize).toString();
-			downLeftBorder = (row - 1).toString() + (col - shipSize).toString();
-
-			rightBorder = row.toString() + (col + 1).toString();
-			upRightBorder = (row + 1).toString() + (col + 1).toString();
-			downRightBorder = (row - 1).toString() + (col + 1).toString();
-
-			locationsToDelete.push(leftBorder, upLeftBorder, downLeftBorder, rightBorder, upRightBorder, downRightBorder);
-			for (let i = 0; i < shipSize; i++) {
-				const location = row.toString() + (col - i).toString();
-				console.log('(possibleLocations.indexOf(location) === -1', possibleLocations.indexOf(location) === -1)
-				if (possibleLocations.indexOf(location) === -1) return null;
-				upBorder = (row + 1).toString() + (col - i).toString();
-				downBorder = (row - 1).toString() + (col - i).toString();
-
-				shipLocations.push(location);
-				locationsToDelete.push(location, upBorder, downBorder);
-			}
-			break;
-		default: return null;
+const getVariantsToPlaceShip = (locations: LocationsMapType, shipSize: number): VariantsToPlaceShipsType => {
+	const variantsToPlaceShips: VariantsToPlaceShipsType = {};
+	for (const [ key, value ] of Object.entries(locations)) {
+		const variantsToPlace = getPossibleLocationsToPlaceShip(shipSize, value);
+		if (variantsToPlace && variantsToPlace.length) variantsToPlaceShips[key] = variantsToPlace;
 	}
-	if (!shipLocations.length || !locationsToDelete.length) return null;
-	return { shipLocations, locationsToDelete };
-}
+	return variantsToPlaceShips;
+};
