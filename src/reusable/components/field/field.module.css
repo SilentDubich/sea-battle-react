@@ -3,17 +3,24 @@
 	align-items: center;
 	justify-content: center;
 	flex-wrap: wrap;
-	margin: 0 auto 15px auto;
 }
 
 .item {
 	box-sizing: border-box;
-	height: 60px;
-	width: 60px;
+	height: 30px;
+	width: 30px;
 	background: #fff;
 	border: 1px solid #565675;
 }
 
 .ship {
 	background: url('/src/imgs/ship.svg') no-repeat center/contain, #fff;
+}
+
+.miss {
+	background: url('/src/imgs/miss.svg') no-repeat center/contain, #fff;
+}
+
+.hit {
+	background: url('/src/imgs/hit.svg') no-repeat center/contain, #fff;
 }

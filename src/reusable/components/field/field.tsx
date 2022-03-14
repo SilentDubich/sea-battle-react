@@ -1,28 +1,34 @@
-import React, {ComponentType, FC, ReactElement} from 'react';
+import React, {FC, ReactElement} from 'react';
 import FieldCss from './field.module.css';
 import {FieldSizeType, ShipsLocationsType} from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
-import {compose} from 'redux';
 import {connect} from 'react-redux';
 
 type PropsType = {
-	fieldSize: FieldSizeType,
-	shipsLocations: ShipsLocationsType | null
+	fieldSize?: FieldSizeType,
+	shipsLocations?: ShipsLocationsType | null,
+	fieldItemSize?: number,
+	shootCallback?: Function,
+	shootLocations?: {
+		[key: string]: number | null
+	} | null
 };
 
-const Field: FC<PropsType> = ({ fieldSize, shipsLocations }) => {
+const Field: FC<PropsType> = ({ fieldSize, shipsLocations, fieldItemSize, shootCallback, shootLocations }) => {
 	if (!fieldSize) return null;
 	const fieldItemEls: Array<ReactElement> = [];
-	const itemSize = 60;
+	const itemSize = fieldItemSize || 60;
 	const maxFieldWidth = itemSize * fieldSize;
 	for (let i = 0; i < fieldSize ** 2; i++) {
 		const id = i < 10 ? `0${ i }` : i.toString();
 		const classes: string = (() => {
 			let classes = `${ FieldCss.item }`;
-			if (shipsLocations && shipsLocations[id]) classes += ` ${ FieldCss.ship }`;
+			if (shipsLocations && shipsLocations[id] !== null && shipsLocations[id] !== undefined) classes += ` ${ FieldCss.ship }`;
+			if (shootLocations && typeof shootLocations[id] === 'number') classes += ` ${ FieldCss.hit }`;
+			if (shootLocations && shootLocations[id] === null) classes += ` ${ FieldCss.miss }`;
 			return classes;
 		})();
-		fieldItemEls.push(<div key={id} id={id} className={classes}/>);
+		fieldItemEls.push(<div onClick={() => shootCallback && shootCallback(id)} key={id} id={id} className={classes} style={{ width: itemSize, height: itemSize }}/>);
 	}
 	return (
 		<div className={FieldCss.field_container} style={{ width: maxFieldWidth }}>
@@ -34,11 +40,8 @@ const Field: FC<PropsType> = ({ fieldSize, shipsLocations }) => {
 
 const mapStateToProps = (state: AppStateType) => {
 	return {
-		fieldSize: state.gameReducer.fieldSize,
-		shipsLocations: state.gameReducer.player?.shipsParams.locations || null
+		fieldSize: state.gameReducer.fieldSize
 	}
 }
 
-export default compose<ComponentType>(
-	connect(mapStateToProps, null)
-)(Field);
+export default connect(mapStateToProps, null)(Field);

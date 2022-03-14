@@ -1,0 +1,11 @@
+.container {
+	display: flex;
+	flex-direction: row;
+	gap: 0 20px;
+	align-items: flex-start;
+	justify-content: center;
+}
+
+.container div:first-child {
+	cursor: pointer;
+}

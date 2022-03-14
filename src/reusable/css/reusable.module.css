@@ -57,3 +57,12 @@
 	justify-content: center;
 	gap: 0 5px;
 }
+
+.disabled {
+	opacity: .5;
+	cursor: default;
+}
+
+.disabled:hover {
+	background: inherit;
+}

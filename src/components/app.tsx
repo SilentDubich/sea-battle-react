@@ -8,18 +8,20 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import {AppStateType} from '../date-base/store';
 import BackButton from './back-button';
+import Battle from './pages/battle/battle';
 
 type PropsType = {
 	gameState: GameStateType
 }
 
 const App: FC<PropsType> = ({ gameState }) => {
-	const { difficulty, mode, fieldSize } = gameState;
+	const { difficulty, mode, fieldSize, isStarted } = gameState;
 	const componentToRender = (() => {
 		if (!mode) return <Main />;
 		if (!difficulty) return <Difficulty />;
 		if (!fieldSize) return <FieldChoose />;
-		return <FieldPrepare/>;
+		if (!isStarted) return <FieldPrepare/>;
+		return <Battle/>
 	})();
 	return (
 		<>
