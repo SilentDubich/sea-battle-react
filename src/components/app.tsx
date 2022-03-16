@@ -17,9 +17,9 @@ type PropsType = {
 const App: FC<PropsType> = ({ gameState }) => {
 	const { difficulty, mode, fieldSize, isStarted } = gameState;
 	const componentToRender = (() => {
-		if (!mode) return <Main />;
-		if (!difficulty) return <Difficulty />;
-		if (!fieldSize) return <FieldChoose />;
+		if (!mode) return <Main/>;
+		if (!difficulty) return <Difficulty/>;
+		if (!fieldSize) return <FieldChoose/>;
 		if (!isStarted) return <FieldPrepare/>;
 		return <Battle/>
 	})();
