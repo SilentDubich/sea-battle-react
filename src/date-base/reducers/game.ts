@@ -1,4 +1,4 @@
-import {AppStateType, InferActionsTypes} from "../store";
+import {AppStateType, InferActionsTypes, store} from "../store";
 import {ThunkAction} from "redux-thunk";
 
 export type ModeType = 'SINGLE' | 'MULTIPLAYER' | null;
@@ -48,6 +48,13 @@ export type BotType = {
 	battleData?: BattleDataType
 };
 
+enum ProbabilitiesEnum {
+	'EASY' = 0,
+	'NORMAL' = 0.2,
+	'HARD' = 0.5,
+	'VERY_HARD' = 0.8
+}
+
 export const gameActions = {
 	setMode: (mode: ModeType) => ({ type: 'SET_MODE', mode } as const),
 	setFieldSize: (fieldSize: FieldSizeType) => ({ type: 'SET_FIELD_SIZE', fieldSize } as const),
@@ -56,7 +63,8 @@ export const gameActions = {
 	setPlayerShips: () => ({ type: 'SET_PLAYER_SHIPS' } as const),
 	setBotShips: () => ({ type: 'SET_BOT_SHIPS' } as const),
 	startGame: () => ({ type: 'START_GAME' } as const),
-	shootToBot: (field: string) => ({ type: 'SHOOT_TO_BOT', field } as const),
+	isBlockShoot: (value: boolean) => ({ type: 'IS_BLOCK_SHOOT', value } as const),
+	updatePlayer: (player: PlayerType | BotType, playerType: 'player' | 'bot') => ({ type: 'UPDATE_PLAYER', player, playerType } as const)
 };
 
 type GameActionType = InferActionsTypes<typeof gameActions>;
@@ -69,18 +77,49 @@ export type GameStateType = {
 	difficulty: DifficultyType,
 	isStarted: IsStartedType,
 	player?: PlayerType,
-	bot?: BotType
+	bot?: BotType,
+	isBlockShoot: boolean
 };
 
 const defaultState = {
 	mode: null as ModeType,
 	fieldSize: null as FieldSizeType,
 	difficulty: null as DifficultyType,
-	isStarted: false as IsStartedType
+	isStarted: false as IsStartedType,
+	isBlockShoot: false as boolean
+};
+
+export const playerShootThunk = (field: string): GameThunkType => {
+	return async (dispatch) => {
+		dispatch(gameActions.isBlockShoot(true));
+		const state: AppStateType = store.getState();
+		const { gameReducer } = state;
+		const { player, bot, fieldSize, difficulty } = gameReducer;
+		if (!player || !bot) return;
+		const tempPlayer: PlayerType = JSON.parse(JSON.stringify(player));
+		const tempBot: BotType = JSON.parse(JSON.stringify(bot));
+		const botShips = tempBot.shipsParams.locations;
+		if (!tempPlayer.shoots || !tempPlayer.hasOwnProperty('shoots')) tempPlayer.shoots = {};
+		if (tempPlayer.shoots.hasOwnProperty(field)) return;
+		const ship = botShips[field] !== undefined ? botShips[field] : null;
+		tempPlayer.shoots[field] = ship;
+		if (ship !== null) {
+			hitShip(tempBot, tempPlayer, field, ship);
+			dispatch(gameActions.updatePlayer(tempPlayer, 'player'));
+		}
+		else {
+			if (!tempBot.hasOwnProperty('battleData') || !tempBot.battleData) tempBot.battleData = {};
+			if (!tempBot.battleData.hasOwnProperty('possibleShoots')) tempBot.battleData.possibleShoots = getPossibleLocations(fieldSize);
+			if (!tempBot.battleData.hasOwnProperty('shoots')) tempBot.battleData.shoots = {};
+			dispatch(gameActions.updatePlayer(tempPlayer, 'player'));
+			await botShoot(tempPlayer, tempBot, fieldSize, difficulty);
+		}
+		dispatch(gameActions.isBlockShoot(false));
+	};
 };
 
 export const gameReducer = (state: GameStateType = defaultState, action: GameActionType): GameStateType => {
-	const { mode, difficulty, isStarted, fieldSize, bot, player } = state;
+	const { mode, difficulty, isStarted, fieldSize } = state;
 	switch (action.type) {
 		case 'SET_MODE':
 			return { ...state, mode: action.mode };
@@ -104,32 +143,17 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 			return { ...state, bot: { shipsParams: createShips(fieldSize) } };
 		case 'START_GAME':
 			return { ...state, isStarted: true, bot: { shipsParams: createShips(fieldSize) } };
-		case 'SHOOT_TO_BOT':
-			if (!player || !bot) return state;
-			const tempPlayer: PlayerType = JSON.parse(JSON.stringify(player));
-			const tempBot: BotType = JSON.parse(JSON.stringify(bot));
-			const field = action.field;
-			const botShips = tempBot.shipsParams.locations;
-			if (!tempPlayer.shoots || !tempPlayer.hasOwnProperty('shoots')) tempPlayer.shoots = {};
-			if (tempPlayer.shoots.hasOwnProperty(field)) return state;
-			const ship = botShips[field] !== undefined ? botShips[field] : null;
-			tempPlayer.shoots[field] = ship;
-			if (ship !== null) {
-				hitShip(tempBot, tempPlayer, field, ship);
-			}
-			else {
-				if (!tempBot.hasOwnProperty('battleData') || !tempBot.battleData) tempBot.battleData = {};
-				if (!tempBot.battleData.hasOwnProperty('possibleShoots')) tempBot.battleData.possibleShoots = getPossibleLocations(fieldSize);
-				if (!tempBot.battleData.hasOwnProperty('shoots')) tempBot.battleData.shoots = {};
-				botShoot(tempPlayer, tempBot);
-			}
-			return { ...state, player: tempPlayer, bot: tempBot };
+		case 'UPDATE_PLAYER':
+			return { ...state, [action.playerType]: action.player }
+		case 'IS_BLOCK_SHOOT':
+			return { ...state, isBlockShoot: action.value }
 		default:
 			return state;
 	}
 }
 
-const botShoot = (player: PlayerType, bot: BotType) => {
+const botShoot = async (player: PlayerType, bot: BotType, fieldSize: FieldSizeType, difficulty: DifficultyType) => {
+	if (!fieldSize) return;
 	const { battleData } = bot;
 	if (!battleData) return;
 	const { firstHitNotSunkShip, lastShootCoord, possibleShoots, shoots } = battleData;
@@ -149,88 +173,104 @@ const botShoot = (player: PlayerType, bot: BotType) => {
 		const right = `${ rowNumber }` + (colNumber + 1).toString();
 		return { top, bottom, left, right };
 	};
-	if (!firstHitNotSunkShip) {
-		const randomLocation = Math.floor(Math.random() * possibleShoots.length);
-		const field = possibleShoots.splice(randomLocation, 1)[0];
-		const ship = getShip(field);
-		shoots[field] = ship;
-		if (ship !== null) battleData.firstHitNotSunkShip = field;
-		setResultBotShoot(player, bot, ship, battleData, field);
-	}
-	else {
-		const { top, bottom, left, right } = getNewLocationVariants(firstHitNotSunkShip);
-		const shipIndex = shoots[firstHitNotSunkShip];
-		// @ts-ignore
-		const targetShip: ShipType = ships[shipIndex];
-		const { hits } = targetShip;
-		if (firstHitNotSunkShip === lastShootCoord || hits.length === 1) {
-			const shootVariants = [];
-			if (isValid(top)) shootVariants.push(top);
-			if (isValid(bottom)) shootVariants.push(bottom);
-			if (isValid(left)) shootVariants.push(left);
-			if (isValid(right)) shootVariants.push(right);
-			const shootIndex = Math.floor(Math.random() * shootVariants.length);
-			const shoot = shootVariants[shootIndex];
-			const ship = getShip(shoot);
-			// console.group();
-			// console.log('shootVariants', shootVariants)
-			// console.log('shootIndex', shootIndex)
-			// console.log('shoot', shoot)
-			// console.groupEnd();
-			shoots[shoot] = ship;
-			possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
-			setResultBotShoot(player, bot, ship, battleData, shoot);
-		}
-		else if (lastShootCoord) {
-			const isSuccessShoot = shoots[lastShootCoord];
-			const different = +firstHitNotSunkShip - (+lastShootCoord);
-			const isTop = different >= 10;
-			const isBottom = different <= -10;
-			const isLeft = different >= 1 && different < 10;
-			const isRight = different <= -1 && different > -10;
-			const locationInDifferentDirection = ((): string | null => {
-				if (isTop) return bottom;
-				if (isBottom) return top;
-				if (isLeft) return right;
-				if (isRight) return left;
-				return null;
-			})();
-			if (!isSuccessShoot && locationInDifferentDirection) {
-				const ship = getShip(locationInDifferentDirection);
-				shoots[locationInDifferentDirection] = ship;
-				possibleShoots.splice(possibleShoots.indexOf(locationInDifferentDirection), 1);
-				setResultBotShoot(player, bot, ship, battleData, locationInDifferentDirection);
+	return new Promise((resolve, reject) => {
+		setTimeout(async () => {
+			if (!firstHitNotSunkShip) {
+				const probability = difficulty ? ProbabilitiesEnum[difficulty] : 0;
+				const isForPlayerLocationShoot = Math.random() < probability;
+				const dontDamagedShipsLocations = getNotDamagedShipsLocations(locations, possibleShoots);
+				const targetLocations = isForPlayerLocationShoot ? dontDamagedShipsLocations : possibleShoots;
+				const randomLocation = Math.floor(Math.random() * targetLocations.length);
+				const field = targetLocations[randomLocation];
+				const ship = getShip(field);
+				shoots[field] = ship;
+				if (ship !== null) battleData.firstHitNotSunkShip = field;
+				await setResultBotShoot(player, bot, ship, battleData, field, fieldSize, difficulty, possibleShoots);
 			}
-			else if (isSuccessShoot) {
-				const { top, bottom, left, right } = getNewLocationVariants(lastShootCoord);
-				const nextLocation = ((): string | null => {
-					if (isTop) return top;
-					if (isBottom) return bottom;
-					if (isLeft) return left;
-					if (isRight) return right;
-					return null;
-				})();
-				const validShoot = (() => {
-					if (nextLocation && isValid(nextLocation)) return nextLocation;
-					return locationInDifferentDirection;
-				})();
-				if (validShoot) {
-					const ship = getShip(validShoot);
-					shoots[validShoot] = ship;
-					possibleShoots.splice(possibleShoots.indexOf(validShoot), 1);
-					setResultBotShoot(player, bot, ship, battleData, validShoot);
+			else {
+				const { top, bottom, left, right } = getNewLocationVariants(firstHitNotSunkShip);
+				const shipIndex = shoots[firstHitNotSunkShip] as number;
+				const targetShip: ShipType = ships[shipIndex];
+				const { hits } = targetShip;
+				if (firstHitNotSunkShip === lastShootCoord || hits.length === 1) {
+					const shootVariants = [];
+					if (isValid(top)) shootVariants.push(top);
+					if (isValid(bottom)) shootVariants.push(bottom);
+					if (isValid(left)) shootVariants.push(left);
+					if (isValid(right)) shootVariants.push(right);
+					const shootIndex = Math.floor(Math.random() * shootVariants.length);
+					const shoot = shootVariants[shootIndex];
+					const ship = getShip(shoot);
+					shoots[shoot] = ship;
+					await setResultBotShoot(player, bot, ship, battleData, shoot, fieldSize, difficulty, possibleShoots);
+				}
+				else if (lastShootCoord) {
+					const isSuccessShoot = shoots[lastShootCoord];
+					const different = +firstHitNotSunkShip - (+lastShootCoord);
+					const isTop = different >= fieldSize;
+					const isBottom = different <= -fieldSize;
+					const isLeft = different >= 1 && different < fieldSize;
+					const isRight = different <= -1 && different > -fieldSize;
+					const locationInDifferentDirection = ((): string | null => {
+						if (isTop) return bottom;
+						if (isBottom) return top;
+						if (isLeft) return right;
+						if (isRight) return left;
+						return null;
+					})();
+					if (!isSuccessShoot && locationInDifferentDirection) {
+						const ship = getShip(locationInDifferentDirection);
+						shoots[locationInDifferentDirection] = ship;
+						await setResultBotShoot(player, bot, ship, battleData, locationInDifferentDirection, fieldSize, difficulty, possibleShoots);
+					}
+					else if (isSuccessShoot) {
+						const { top, bottom, left, right } = getNewLocationVariants(lastShootCoord);
+						const nextLocation = ((): string | null => {
+							if (isTop) return top;
+							if (isBottom) return bottom;
+							if (isLeft) return left;
+							if (isRight) return right;
+							return null;
+						})();
+						const validShoot = (() => {
+							if (nextLocation && isValid(nextLocation)) return nextLocation;
+							return locationInDifferentDirection;
+						})();
+						if (validShoot) {
+							const ship = getShip(validShoot);
+							shoots[validShoot] = ship;
+							await setResultBotShoot(player, bot, ship, battleData, validShoot, fieldSize, difficulty, possibleShoots);
+						}
+					}
 				}
 			}
-		}
-	}
+			resolve('success');
+		}, 500);
+	});
 };
 
-const setResultBotShoot = (player: PlayerType, bot: BotType, ship: number | null, battleData: BattleDataType, shoot: string) => {
-	if (ship === null) return battleData.lastShootCoord = shoot;
+const setResultBotShoot = async (
+	player: PlayerType,
+	bot: BotType,
+	ship: number | null,
+	battleData: BattleDataType,
+	shoot: string,
+	fieldSize: FieldSizeType,
+	difficulty: DifficultyType,
+	possibleShoots: Array<string>
+) => {
+	possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
+	const dispatch = store.dispatch;
+	if (ship === null) {
+		battleData.lastShootCoord = shoot;
+		dispatch(gameActions.updatePlayer(bot, 'bot'));
+		return;
+	}
 	const isSunk = hitShip(player, bot, shoot, ship);
 	if (isSunk) battleData.firstHitNotSunkShip = null;
 	battleData.lastShootCoord = shoot;
-	botShoot(player, bot);
+	dispatch(gameActions.updatePlayer(bot, 'bot'));
+	await botShoot(player, bot, fieldSize, difficulty);
 };
 
 const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, field: string, ship: number): boolean => {
@@ -272,12 +312,22 @@ const getPossibleShips = (fieldSize: FieldSizeType): Array<number> | null => {
 	return null;
 };
 
-const getPossibleLocations = (fieldSize: FieldSizeType): Array<string> => {
+export const getPossibleLocations = (fieldSize: FieldSizeType): Array<string> => {
 	const locations: Array<string> = [];
 	if (!fieldSize) return locations;
+	let rowNumber = 0;
+	let colNumber = 0;
 	for (let i = 0; i < fieldSize ** 2; i++) {
-		const index = i < 10 ? '0' + i : i.toString();
-		locations.push(index);
+		const location = `${ rowNumber }${ colNumber }`;
+		locations.push(location);
+		const nextColNumber = colNumber + 1;
+		if (nextColNumber === fieldSize) {
+			rowNumber++;
+			colNumber = 0;
+		}
+		else {
+			colNumber++;
+		}
 	}
 	return locations;
 };
@@ -359,49 +409,44 @@ const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
 		const colNumberRight = colNumber + 1;
 		const rowNumberTop = rowNumber - 1;
 		const rowNumberBottom = rowNumber + 1;
-		const isValid = (row: number, col: number) => {
-			if (row < 0 || row >= 10) return false;
-			if (col < 0 || col >= 10) return false;
-			return true;
-		};
 		if (isVertical) {
 			if (isFirst) {
 				const value = rowNumberTop;
-				isValid(value, colNumber) && borders.push(`${ value }${ colNumber }`);
-				isValid(value, colNumberLeft) && borders.push(`${ value }${ colNumberLeft }`);
-				isValid(value, colNumberRight) && borders.push(`${ value }${ colNumberRight }`);
+				borders.push(`${ value }${ colNumber }`);
+				borders.push(`${ value }${ colNumberLeft }`);
+				borders.push(`${ value }${ colNumberRight }`);
 			}
 
 			if (isLast) {
 				const value = rowNumberBottom;
-				isValid(value, colNumber) && borders.push(`${ value }${ colNumber }`);
-				isValid(value, colNumberLeft) && borders.push(`${ value }${ colNumberLeft }`);
-				isValid(value, colNumberRight) && borders.push(`${ value }${ colNumberRight }`);
+				borders.push(`${ value }${ colNumber }`);
+				borders.push(`${ value }${ colNumberLeft }`);
+				borders.push(`${ value }${ colNumberRight }`);
 			}
 
 			const borderLeft = `${ rowNumber }${ colNumberLeft }`;
 			const borderRight = `${ rowNumber }${ colNumberRight }`;
-			isValid(rowNumber, colNumberLeft) && borders.push(borderLeft);
-			isValid(rowNumber, colNumberRight) && borders.push(borderRight);
+			borders.push(borderLeft);
+			borders.push(borderRight);
 
 		}
 		else {
 			if (isFirst) {
 				const value = colNumberLeft;
-				isValid(rowNumber, value) && borders.push(`${ rowNumber }${ value }`);
-				isValid(rowNumberTop, value) && borders.push(`${ rowNumberTop }${ value }`);
-				isValid(rowNumberBottom, value) && borders.push(`${ rowNumberBottom }${ value }`);
+				borders.push(`${ rowNumber }${ value }`);
+				borders.push(`${ rowNumberTop }${ value }`);
+				borders.push(`${ rowNumberBottom }${ value }`);
 			}
 			if (isLast) {
 				const value = colNumberRight;
-				isValid(rowNumber, value) && borders.push(`${ rowNumber }${ value }`);
-				isValid(rowNumberTop, value) && borders.push(`${ rowNumberTop }${ value }`);
-				isValid(rowNumberBottom, value) && borders.push(`${ rowNumberBottom }${ value }`);
+				borders.push(`${ rowNumber }${ value }`);
+				borders.push(`${ rowNumberTop }${ value }`);
+				borders.push(`${ rowNumberBottom }${ value }`);
 			}
 			const borderTop = `${ rowNumberTop }${ colNumber }`;
 			const borderBottom = `${ rowNumberBottom }${ colNumber }`;
-			isValid(rowNumberTop, colNumber) && borders.push(borderTop);
-			isValid(rowNumberBottom, colNumber) && borders.push(borderBottom);
+			borders.push(borderTop);
+			borders.push(borderBottom);
 		}
 	});
 	return borders;
@@ -469,3 +514,16 @@ const getVariantsToPlaceShip = (locations: LocationsMapType, shipSize: number): 
 	}
 	return variantsToPlaceShips;
 };
+
+const getNotDamagedShipsLocations = (targetShips: ShipsLocationsType, possibleShoots: Array<string>): Array<string> => {
+	const locations: Array<string> = [];
+	possibleShoots.forEach(possibleShoot => {
+		if (targetShips[possibleShoot] !== undefined) locations.push(possibleShoot);
+	});
+	return locations;
+};
+
+// крч надо
+// 2. сделать расстановку кораблей драг дропом
+// 4. по рефакторить
+// 5. добавить онлайн
