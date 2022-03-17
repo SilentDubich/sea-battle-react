@@ -10,17 +10,21 @@ import ReusableCss from '../../../reusable/css/reusable.module.css';
 type PropsType = {
 	player: PlayerType | null,
 	bot: BotType | null,
-	playerShootThunk: typeof playerShootThunk
+	playerShootThunk: typeof playerShootThunk,
+	isBlockShoot: boolean
 };
 
-const Battle: FC<PropsType> = ({ player, playerShootThunk, bot }) => {
+const Battle: FC<PropsType> = ({ player, playerShootThunk, bot, isBlockShoot }) => {
 	const playerShipsLocations: ShipsLocationsType | null = player ? player.shipsParams.locations : null;
 	const playerShoots = player && player.shoots ? player.shoots : null;
 	const botShoots = bot && bot.battleData && bot.battleData.shoots ? bot.battleData.shoots : null;
 	return (
-		<div className={`${ BattleCss.container } ${ ReusableCss.container }`}>
-			<Field fieldTitle={'Поле противника'} shootLocations={playerShoots} shootCallback={playerShootThunk}/>
-			<Field fieldTitle={'Твоё поле'} shootLocations={botShoots} shipsLocations={playerShipsLocations} fieldItemSize={45}/>
+		<div className={`${ ReusableCss.container }`}>
+			<div className={ReusableCss.main_title}>{ isBlockShoot ? 'Ход противника' : 'Твой ход'}</div>
+			<div className={`${ BattleCss.container }`}>
+				<Field fieldTitle={'Поле противника'} shootLocations={playerShoots} shootCallback={playerShootThunk}/>
+				<Field fieldTitle={'Твоё поле'} shootLocations={botShoots} shipsLocations={playerShipsLocations} fieldItemSize={45}/>
+			</div>
 		</div>
 	)
 };
@@ -31,7 +35,7 @@ const mapStateToProps = (state: AppStateType) => {
 		bot: state.gameReducer.bot || null,
 		isBlockShoot: state.gameReducer.isBlockShoot
 	}
-}
+};
 
 export default compose<ComponentType> (
 	connect(mapStateToProps, { playerShootThunk })
