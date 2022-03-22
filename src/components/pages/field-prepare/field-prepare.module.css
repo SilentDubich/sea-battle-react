@@ -1,3 +1,12 @@
 .field {
 	margin: 0 auto 15px auto;
 }
+
+.ships_container {
+	margin: 15px 0 0 0;
+	padding: 0 10px;
+	display: flex;
+	gap: 10px;
+	box-sizing: border-box;
+	width: 100%;
+}

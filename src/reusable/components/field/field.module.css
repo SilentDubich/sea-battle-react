@@ -24,3 +24,17 @@
 .hit {
 	background: url('/src/imgs/hit.svg') no-repeat center/contain, #fff;
 }
+
+.vertical_ship {
+	display: block;
+}
+
+.horizontal_ship {
+	display: flex;
+}
+
+.vertical_ship:hover,
+.horizontal_ship:hover {
+	background-color: #fff;
+	cursor: grab;
+}

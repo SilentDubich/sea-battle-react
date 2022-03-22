@@ -22,8 +22,10 @@ type ShipsParamsType = {
 	ships: ShipsType
 };
 
+export type ShipSize = 1 | 2 | 3 | 4;
+
 export type ShipType = {
-	size: number,
+	size: ShipSize,
 	hits: Array<string>
 };
 
@@ -114,6 +116,7 @@ export const playerShootThunk = (field: string): GameThunkType => {
 			dispatch(gameActions.updatePlayer(tempPlayer, 'player'));
 			await botShoot(tempPlayer, tempBot, fieldSize, difficulty);
 		}
+		dispatch(gameActions.updatePlayer(tempBot, 'bot'));
 		dispatch(gameActions.isBlockShoot(false));
 	};
 };
@@ -306,7 +309,7 @@ const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, fi
 	return isSunk;
 };
 
-const getPossibleShips = (fieldSize: FieldSizeType): Array<number> | null => {
+export const getPossibleShips = (fieldSize: FieldSizeType): Array<number> | null => {
 	if (fieldSize === 8) return [ 3, 2, 2, 2, 1, 1, 1 ];
 	if (fieldSize === 10) return [ 4, 3, 3, 2, 2, 2, 1, 1, 1, 1 ];
 	return null;
@@ -346,7 +349,7 @@ const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
 		if (!shipLocations) return createShips(fieldSize);
 		const ship: ShipType = {
 			hits: [],
-			size: possibleShip
+			size: possibleShip as ShipSize
 		};
 
 		shipLocations.forEach(shipLocation => {
