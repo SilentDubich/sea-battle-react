@@ -22,10 +22,10 @@ type ShipsParamsType = {
 	ships: ShipsType
 };
 
-export type ShipSize = 1 | 2 | 3 | 4;
+export type ShipSizeType = 1 | 2 | 3 | 4;
 
 export type ShipType = {
-	size: ShipSize,
+	size: ShipSizeType,
 	hits: Array<string>
 };
 
@@ -282,12 +282,7 @@ const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, fi
 	hits.push(field);
 	const isSunk = hits.length === shipInShips.size;
 	if (isSunk) {
-		const isVertical = (() => {
-			if (shipInShips.size === 1) return false;
-			const firstLocation = +hits[0];
-			const secondLocation = +hits[1];
-			return (secondLocation - firstLocation) % 10 === 0;
-		})();
+		const isVertical = isVerticalShip(hits[0], hits[1]);
 		const sortedHits = hits.sort((a, b) => +a - (+b));
 		const borders = getBorders(sortedHits, isVertical);
 		const isBot = (obj: any): obj is BotType => {
@@ -307,6 +302,14 @@ const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, fi
 		});
 	}
 	return isSunk;
+};
+
+export const isVerticalShip = (firstLocation: string, secondLocation: string): boolean => {
+
+	if (!secondLocation) return false;
+	const firstLocationNumber = +firstLocation;
+	const secondLocationNumber = +secondLocation;
+	return (secondLocationNumber - firstLocationNumber) % 10 === 0;
 };
 
 export const getPossibleShips = (fieldSize: FieldSizeType): Array<number> | null => {
@@ -345,11 +348,11 @@ const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
 	const possibleShips = getPossibleShips(fieldSize);
 	if (!possibleShips) return shipsParams;
 	possibleShips.forEach((possibleShip, i) => {
-		const shipLocations: Array<string> | null = createShip(possibleShip, possibleLocations, fieldSize);
+		const shipLocations: Array<string> | null = createShip(possibleShip as ShipSizeType, possibleLocations, fieldSize);
 		if (!shipLocations) return createShips(fieldSize);
 		const ship: ShipType = {
 			hits: [],
-			size: possibleShip as ShipSize
+			size: possibleShip as ShipSizeType
 		};
 
 		shipLocations.forEach(shipLocation => {
@@ -361,7 +364,7 @@ const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
 	return shipsParams;
 };
 
-const createShip = (shipSize: number, possibleLocations: Array<string>, fieldSize: FieldSizeType) => {
+const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fieldSize: FieldSizeType) => {
 	if (!fieldSize || !shipSize || !possibleLocations) return null;
 	const { colLoc, rowLoc } = getLocationsMap(possibleLocations);
 
@@ -473,7 +476,7 @@ const getLocationsMap = (possibleLocations: Array<string>): { rowLoc: LocationsM
 	return { rowLoc, colLoc };
 };
 
-const getPossibleLocationsToPlaceShip = (shipSize: number, locationsMap: Array<number>): Array<Array<number>> | null => {
+const getPossibleLocationsToPlaceShip = (shipSize: ShipSizeType, locationsMap: Array<number>): Array<Array<number>> | null => {
 	const variants: Array<Array<number>> = [];
 	let temp: Array<number> = [];
 	let prevValue: number = 0;
@@ -509,7 +512,7 @@ type VariantsToPlaceShipsType = {
 	[key:string]: Array<Array<number>>
 };
 
-const getVariantsToPlaceShip = (locations: LocationsMapType, shipSize: number): VariantsToPlaceShipsType => {
+const getVariantsToPlaceShip = (locations: LocationsMapType, shipSize: ShipSizeType): VariantsToPlaceShipsType => {
 	const variantsToPlaceShips: VariantsToPlaceShipsType = {};
 	for (const [ key, value ] of Object.entries(locations)) {
 		const variantsToPlace = getPossibleLocationsToPlaceShip(shipSize, value);
