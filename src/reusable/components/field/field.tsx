@@ -45,7 +45,6 @@ const Field = forwardRef<any, PropsType>(({
 			if (isMiss) classes += ` ${ FieldCss.miss }`;
 			return classes;
 		})();
-
 		fieldItemEls.push(
 			<div
 				onClick={() => !isBlockShoot && shootCallback && shootCallback(location)}

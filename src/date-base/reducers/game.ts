@@ -63,6 +63,7 @@ export const gameActions = {
 	setDifficulty: (difficulty: DifficultyType) => ({ type: 'SET_DIFFICULTY', difficulty } as const),
 	back: () => ({ type: 'BACK' } as const),
 	setPlayerShips: () => ({ type: 'SET_PLAYER_SHIPS' } as const),
+	setShipLocation: (locations: Array<string>, shipId: number) => ({ type: 'SET_SHIP_LOCATION', shipId, locations } as const),
 	setBotShips: () => ({ type: 'SET_BOT_SHIPS' } as const),
 	startGame: () => ({ type: 'START_GAME' } as const),
 	isBlockShoot: (value: boolean) => ({ type: 'IS_BLOCK_SHOOT', value } as const),
@@ -122,7 +123,7 @@ export const playerShootThunk = (field: string): GameThunkType => {
 };
 
 export const gameReducer = (state: GameStateType = defaultState, action: GameActionType): GameStateType => {
-	const { mode, difficulty, isStarted, fieldSize } = state;
+	const { mode, difficulty, isStarted, fieldSize, player } = state;
 	switch (action.type) {
 		case 'SET_MODE':
 			return { ...state, mode: action.mode };
@@ -150,6 +151,33 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 			return { ...state, [action.playerType]: action.player }
 		case 'IS_BLOCK_SHOOT':
 			return { ...state, isBlockShoot: action.value }
+		case 'SET_SHIP_LOCATION':
+			const shipParams: ShipsParamsType = player?.shipsParams || { ships: {}, locations: {} };
+			const shipLocations = { ...shipParams.locations };
+			const ships = { ...shipParams.ships };
+			const { locations, shipId } = action;
+			if (ships[shipId]) delete ships[shipId];
+
+			for (const [ key, value ] of Object.entries(shipLocations)) {
+				if (value === shipId) delete shipLocations[key];
+			}
+
+			if (shipLocations) {
+				locations.forEach(location => {
+					shipLocations[location] = shipId;
+				});
+				ships[shipId] = { hits: [], size: 1 };
+				return {
+					...state,
+					player: {
+						shipsParams: {
+							ships,
+							locations: shipLocations
+						}
+					}
+				};
+			}
+			return state;
 		default:
 			return state;
 	}
@@ -402,7 +430,7 @@ const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fi
 	return locationToPlace;
 };
 
-const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
+export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
 	const borders: Array<string> = [];
 	locationToPlace.forEach((locationCoordination, i) => {
 		const rowNumber = +locationCoordination[0];

@@ -11,17 +11,19 @@ type PropsType = {
 	height: number,
 	sizeForDrag?: ShipSizeType,
 	isVertical: boolean,
-	x?: number,
-	y?: number
+	x?: number | null,
+	y?: number | null,
+	moveCallback?: any,
+	endMoveCallback?: any
 };
 
 
-export const Ship = forwardRef<any, PropsType>(({ size, width, height, sizeForDrag, isVertical, x, y}, forwardedRef: any) => {
+export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeForDrag, isVertical, x, y, moveCallback, endMoveCallback }, forwardedRef: any) => {
 	const [ currentSize, setCurrentSize ] = useState<ShipSizeType>(size);
 	const [ shiftX, setShiftX ] = useState<number>(0);
 	const [ shiftY, setShiftY ] = useState<number>(0);
-	const [ placeX, setPlaceX ] = useState<number | undefined>(x);
-	const [ placeY, setPlaceY ] = useState<number | undefined>(y);
+	const [ placeX, setPlaceX ] = useState<number | undefined | null>(x);
+	const [ placeY, setPlaceY ] = useState<number | undefined | null>(y);
 	const [ isVerticalValue, setIsVerticalValue ] = useState<boolean>(isVertical);
 	const [ ref, setRef ] = useState<any>(forwardedRef || React.createRef<any>());
 	const shipEls: Array<JSX.Element> = [];
@@ -41,7 +43,11 @@ export const Ship = forwardRef<any, PropsType>(({ size, width, height, sizeForDr
 	}, [isVertical]);
 
 	useEffect(() => {
-		if (placeX !== undefined && placeY !== undefined) {
+		setCurrentSize(size);
+	}, [size]);
+
+	useEffect(() => {
+		if (placeX && placeY) {
 			const current = ref.current;
 			current.style.position = 'absolute';
 			current.style.left = `${ placeX }px`;
@@ -59,16 +65,24 @@ export const Ship = forwardRef<any, PropsType>(({ size, width, height, sizeForDr
 		const shiftY = calculateShift(clientY, y);
 		setShiftX(shiftX);
 		setShiftY(shiftY);
-		setCurrentSize(sizeForDrag || size);
 		current.style.position = 'absolute';
 		window.addEventListener('mousemove', drag);
 		window.addEventListener('mouseup', dragEnd);
+		window.addEventListener('wheel', switchIsVertical);
+	};
+	let tempVertical = isVertical;
+	const switchIsVertical = () => {
+		const current = ref.current;
+		setIsVerticalValue(!tempVertical);
+		tempVertical = !tempVertical;
+		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const drag = (e: any) => {
 		const current = ref.current;
 		const { pageX, pageY } = e;
 		current.style.left = `${ pageX - shiftX }px`;
 		current.style.top = `${ pageY - shiftY }px`;
+		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const dragEnd = (e: any) => {
 		const current = ref.current;
@@ -76,6 +90,8 @@ export const Ship = forwardRef<any, PropsType>(({ size, width, height, sizeForDr
 		current.style.zIndex = '';
 		window.removeEventListener('mousemove', drag);
 		window.removeEventListener('mouseup', dragEnd);
+		window.removeEventListener('wheel', switchIsVertical);
+		endMoveCallback && endMoveCallback(current, tempVertical);
 		if (x && y) {
 			current.style.left = `${ x }px`;
 			current.style.top = `${ y }px`;
@@ -91,6 +107,7 @@ export const Ship = forwardRef<any, PropsType>(({ size, width, height, sizeForDr
 			className={classes}
 			ref={ref}
 			onMouseDown={setShifts}
+			id={id.toString()}
 		>
 			{ shipEls }
 		</div>

@@ -37,4 +37,5 @@
 .horizontal_ship:hover {
 	background-color: #fff;
 	cursor: grab;
+	user-select: none;
 }
