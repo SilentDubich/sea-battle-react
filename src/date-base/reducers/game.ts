@@ -162,22 +162,22 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 				if (value === shipId) delete shipLocations[key];
 			}
 
-			if (shipLocations) {
+			if (shipLocations && locations.length) {
 				locations.forEach(location => {
 					shipLocations[location] = shipId;
 				});
 				ships[shipId] = { hits: [], size: 1 };
-				return {
-					...state,
-					player: {
-						shipsParams: {
-							ships,
-							locations: shipLocations
-						}
-					}
-				};
+
 			}
-			return state;
+			return {
+				...state,
+				player: {
+					shipsParams: {
+						ships,
+						locations: shipLocations
+					}
+				}
+			};
 		default:
 			return state;
 	}
@@ -509,10 +509,10 @@ const getPossibleLocationsToPlaceShip = (shipSize: ShipSizeType, locationsMap: A
 	let temp: Array<number> = [];
 	let prevValue: number = 0;
 	locationsMap.forEach((locationMap, i) => {
-		const isLast = i - 1 === locationsMap.length;
+		const isLast = i === locationsMap.length - 1;
 		prevValue = i;
 		temp = [locationMap];
-		if (isLast || shipSize === 1) {
+		if (isLast) {
 			if (temp.length === shipSize) variants.push(temp);
 		}
 		else {

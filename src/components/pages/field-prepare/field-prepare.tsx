@@ -24,7 +24,14 @@ type PropsType = {
 
 const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldSize, setShipLocation }) => {
 	const buttonClasses = `${ ReusableCss.button }`;
-	const startGameClasses = `${ buttonClasses } ${ !player && ReusableCss.disabled }`;
+	const possibleShips: Array<number> | null = getPossibleShips(fieldSize);
+	let isAllShipsPlaced = false;
+	if (player) {
+		const { shipsParams } = player;
+		const { ships } = shipsParams;
+		if (possibleShips && ships && possibleShips.length === Object.keys(ships).length) isAllShipsPlaced = true;
+	}
+	const startGameClasses = `${ buttonClasses } ${ !isAllShipsPlaced && ReusableCss.disabled }`;
 	const playerShipsLocations: ShipsLocationsType | null = player ? player.shipsParams.locations : null;
 	const tempPlacedShips: {
 		[key: number]: Array<string>
@@ -33,7 +40,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 	const [ refs, setRefs ] = useState<{[key: number]: any}>({});
 	const [ placedShips, setPlacedShips ] = useState<{[key: number]: Array<string>}>({});
 	let tempRefs: {[key: number]: any} = {};
-	const possibleShips: Array<number> | null = getPossibleShips(fieldSize);
+
 	useLayoutEffect(() => {
 		if (playerShipsLocations) {
 			for (const [key, value] of Object.entries(playerShipsLocations)) {
@@ -85,9 +92,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 		const shipEls = [ ...shipRef.children ];
 		const fieldEl = myRef.current;
 		const fieldEls = [ ...fieldEl.children ];
-		console.log(isVertical)
 		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
-
 		setShootLocations(locations);
 	};
 	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {

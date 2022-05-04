@@ -47,13 +47,18 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 	}, [size]);
 
 	useEffect(() => {
+		const current = ref.current;
 		if (placeX && placeY) {
-			const current = ref.current;
 			current.style.position = 'absolute';
 			current.style.left = `${ placeX }px`;
 			current.style.top = `${ placeY }px`;
 		}
-	});
+		else {
+			current.style.position = 'static';
+			current.style.left = '';
+			current.style.top = '';
+		}
+	}, [ placeX, placeY ]);
 	const calculateShift = (clientCoord: number, shipCoord: number) => {
 		return clientCoord - shipCoord;
 	};
