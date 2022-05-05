@@ -110,11 +110,18 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 		const fieldMatchesIds: Array<string> = getFieldMatches(shipEls, fieldEls);
 		setShipLocation(fieldMatchesIds, +shipRef.id);
 	}
+	const maximumWidth = window.screen.availWidth;
+	const maximumItemSize = 60;
+	const maximumPossibleItemSize = fieldSize ? maximumWidth / fieldSize : maximumItemSize;
+	const shipSize = (() => {
+		if (maximumPossibleItemSize >= maximumItemSize) return maximumItemSize;
+		return maximumPossibleItemSize;
+	})();
 	useLayoutEffect(() => {
 		const current = myRef.current;
 		const fieldEls = [ ...current.children ];
 		if (!playerShipsLocations && possibleShips) {
-			setShipElsState(possibleShips.map((possibleShip, i) => <Ship key={i} endMoveCallback={shipEndMoveCallback} moveCallback={shipMoveCallback} isVertical={false} ref={refs[i]} id={i} size={possibleShip as ShipSizeType} width={60} height={60}/>));
+			setShipElsState(possibleShips.map((possibleShip, i) => <Ship key={i} endMoveCallback={shipEndMoveCallback} moveCallback={shipMoveCallback} isVertical={false} ref={refs[i]} id={i} size={possibleShip as ShipSizeType} width={shipSize} height={shipSize}/>));
 			return;
 		}
 		const els: Array<ReactElement> = [];
@@ -145,8 +152,8 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 					ref={refs[i]}
 					id={i}
 					size={possibleShip as ShipSizeType}
-					width={60}
-					height={60}
+					width={shipSize}
+					height={shipSize}
 				/>
 			);
 		});

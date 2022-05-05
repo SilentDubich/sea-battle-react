@@ -432,56 +432,31 @@ const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fi
 
 export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
 	const borders: Array<string> = [];
-	locationToPlace.forEach((locationCoordination, i) => {
+	const bumperLocations: Array<string> = [];
+	const firstLocation = locationToPlace[0];
+	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;
+	const rowNumber = firstLocation[0];
+	const colNumber = firstLocation[1];
+	const locations = (() => {
+		if (isVertical) return [ `${ (+lastLocation[0] + 1).toString() }${ colNumber }`, `${ (+firstLocation[0] - 1).toString() }${ colNumber }` ];
+		else return [ `${ rowNumber }${ (+lastLocation[1] + 1).toString() }`, `${ rowNumber }${ (+firstLocation[1] - 1).toString() }` ];
+	})();
+	bumperLocations.push(...locations);
+	borders.push(...locations);
+	const allLocations: Array<string> = [ ...locationToPlace, ...bumperLocations ];
+	allLocations.forEach((locationCoordination, i) => {
 		const rowNumber = +locationCoordination[0];
 		const colNumber = +locationCoordination[1];
-
-		const isFirst = i === 0;
-		const isLast = i === locationToPlace.length - 1;
 
 		const colNumberLeft = colNumber - 1;
 		const colNumberRight = colNumber + 1;
 		const rowNumberTop = rowNumber - 1;
 		const rowNumberBottom = rowNumber + 1;
-		if (isVertical) {
-			if (isFirst) {
-				const value = rowNumberTop;
-				borders.push(`${ value }${ colNumber }`);
-				borders.push(`${ value }${ colNumberLeft }`);
-				borders.push(`${ value }${ colNumberRight }`);
-			}
-
-			if (isLast) {
-				const value = rowNumberBottom;
-				borders.push(`${ value }${ colNumber }`);
-				borders.push(`${ value }${ colNumberLeft }`);
-				borders.push(`${ value }${ colNumberRight }`);
-			}
-
-			const borderLeft = `${ rowNumber }${ colNumberLeft }`;
-			const borderRight = `${ rowNumber }${ colNumberRight }`;
-			borders.push(borderLeft);
-			borders.push(borderRight);
-
-		}
-		else {
-			if (isFirst) {
-				const value = colNumberLeft;
-				borders.push(`${ rowNumber }${ value }`);
-				borders.push(`${ rowNumberTop }${ value }`);
-				borders.push(`${ rowNumberBottom }${ value }`);
-			}
-			if (isLast) {
-				const value = colNumberRight;
-				borders.push(`${ rowNumber }${ value }`);
-				borders.push(`${ rowNumberTop }${ value }`);
-				borders.push(`${ rowNumberBottom }${ value }`);
-			}
-			const borderTop = `${ rowNumberTop }${ colNumber }`;
-			const borderBottom = `${ rowNumberBottom }${ colNumber }`;
-			borders.push(borderTop);
-			borders.push(borderBottom);
-		}
+		const bordersToPush = (() => {
+			if (isVertical) return [ `${ rowNumber }${ colNumberLeft }`, `${ rowNumber }${ colNumberRight }` ];
+			else return [ `${ rowNumberTop }${ colNumber }`, `${ rowNumberBottom }${ colNumber }` ];
+		})();
+		borders.push(...bordersToPush);
 	});
 	return borders;
 };
@@ -556,8 +531,3 @@ const getNotDamagedShipsLocations = (targetShips: ShipsLocationsType, possibleSh
 	});
 	return locations;
 };
-
-// крч надо
-// 2. сделать расстановку кораблей драг дропом
-// 4. по рефакторить
-// 5. добавить онлайн

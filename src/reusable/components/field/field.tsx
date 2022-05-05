@@ -31,7 +31,14 @@ const Field = forwardRef<any, PropsType>(({
 }, ref) => {
 	if (!fieldSize) return null;
 	const fieldItemEls: Array<ReactElement> = [];
-	const itemSize = fieldItemSize || 60;
+	const maximumWidth = window.screen.availWidth;
+	const maximumItemSize = 60;
+	const maximumPossibleItemSize = maximumWidth / fieldSize;
+	const itemSize = (() => {
+		if (!fieldItemSize && maximumPossibleItemSize >= maximumItemSize) return maximumItemSize;
+		if (fieldItemSize && maximumPossibleItemSize >= fieldItemSize) return fieldItemSize;
+		return maximumPossibleItemSize;
+	})();
 	const maxFieldWidth = itemSize * fieldSize;
 	const locations = getPossibleLocations(fieldSize);
 	locations.forEach(location => {
