@@ -22,5 +22,4 @@ declare global {
 	}
 }
 
-
 window.store = store;
