@@ -1,5 +1,6 @@
 .btn {
 	width: 10%;
+	min-width: 100px;
 	max-width: 200px;
 	font-size: 1.25rem;
 	height: 40px;

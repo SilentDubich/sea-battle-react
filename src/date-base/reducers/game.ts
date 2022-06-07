@@ -432,6 +432,7 @@ const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fi
 
 export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
 	const borders: Array<string> = [];
+	if (!locationToPlace.length) return borders;
 	const bumperLocations: Array<string> = [];
 	const firstLocation = locationToPlace[0];
 	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;

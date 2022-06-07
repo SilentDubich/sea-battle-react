@@ -52,11 +52,15 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 			current.style.position = 'absolute';
 			current.style.left = `${ placeX }px`;
 			current.style.top = `${ placeY }px`;
+			current.style.pointerEvents = 'none';
+			current.style.touchAction = 'none';
 		}
 		else {
 			current.style.position = 'static';
 			current.style.left = '';
 			current.style.top = '';
+			current.style.pointerEvents = '';
+			current.style.touchAction = '';
 		}
 	}, [ placeX, placeY ]);
 	const calculateShift = (clientCoord: number, shipCoord: number) => {
@@ -71,8 +75,10 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		setShiftX(shiftX);
 		setShiftY(shiftY);
 		current.style.position = 'absolute';
-		window.addEventListener('mousemove', drag);
-		window.addEventListener('mouseup', dragEnd);
+		current.style.pointerEvents = 'none';
+		current.style.touchAction = 'none';
+		window.addEventListener('pointermove', drag);
+		window.addEventListener('pointerup', dragEnd);
 		window.addEventListener('wheel', switchIsVertical);
 	};
 	let tempVertical = isVertical;
@@ -93,8 +99,9 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		const current = ref.current;
 		current.style.pointerEvents = '';
 		current.style.zIndex = '';
-		window.removeEventListener('mousemove', drag);
-		window.removeEventListener('mouseup', dragEnd);
+		current.style.touchAction = '';
+		window.removeEventListener('pointermove', drag);
+		window.removeEventListener('pointerup', dragEnd);
 		window.removeEventListener('wheel', switchIsVertical);
 		endMoveCallback && endMoveCallback(current, tempVertical);
 		if (x && y) {
@@ -111,7 +118,7 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		<div
 			className={classes}
 			ref={ref}
-			onMouseDown={setShifts}
+			onPointerDown={setShifts}
 			id={id.toString()}
 		>
 			{ shipEls }
