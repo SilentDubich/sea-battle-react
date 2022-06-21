@@ -161,13 +161,13 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 			for (const [ key, value ] of Object.entries(shipLocations)) {
 				if (value === shipId) delete shipLocations[key];
 			}
-
-			if (shipLocations && locations.length) {
+			const possibleShips = getPossibleShips(fieldSize);
+			if (shipLocations && locations.length && possibleShips) {
 				locations.forEach(location => {
 					shipLocations[location] = shipId;
 				});
-				ships[shipId] = { hits: [], size: 1 };
 
+				ships[shipId] = { hits: [], size: possibleShips[shipId] as ShipSizeType };
 			}
 			return {
 				...state,
