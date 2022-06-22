@@ -6,9 +6,12 @@ import {compose} from 'redux';
 import {connect} from 'react-redux';
 import {
 	FieldSizeType,
-	gameActions, getBorders,
-	getPossibleShips, isVerticalShip,
-	PlayerType, ShipSizeType,
+	gameActions,
+	getBorders,
+	getPossibleShips,
+	isVerticalShip,
+	PlayerType,
+	ShipSizeType,
 	ShipsLocationsType
 } from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
@@ -93,6 +96,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 		const fieldEl = myRef.current;
 		const fieldEls = [ ...fieldEl.children ];
 		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
+		console.log(locations)
 		setShootLocations(locations);
 	};
 	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {
@@ -118,17 +122,33 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 		return maximumPossibleItemSize;
 	})();
 	useLayoutEffect(() => {
+		const createShip = (x: number | null, y: number | null, index: number, isVertical: boolean, size: ShipSizeType, width: number, height: number) => {
+			return <Ship
+				x={x}
+				y={y}
+				key={index}
+				endMoveCallback={shipEndMoveCallback}
+				moveCallback={shipMoveCallback}
+				isVertical={isVertical}
+				ref={refs[index]}
+				id={index}
+				size={size as ShipSizeType}
+				width={width}
+				height={height}
+			/>
+		};
 		const current = myRef.current;
 		const fieldEls = [ ...current.children ];
 		if (!playerShipsLocations && possibleShips) {
-			setShipElsState(possibleShips.map((possibleShip, i) => <Ship key={i} endMoveCallback={shipEndMoveCallback} moveCallback={shipMoveCallback} isVertical={false} ref={refs[i]} id={i} size={possibleShip as ShipSizeType} width={shipSize} height={shipSize}/>));
+			setShipElsState(possibleShips.map((possibleShip, i) => createShip(null, null, i, false, possibleShip as ShipSizeType, shipSize, shipSize)));
 			return;
 		}
 		const els: Array<ReactElement> = [];
 		possibleShips?.forEach((possibleShip, i) => {
 			const placedShip = placedShips[i];
 			const isVertical = placedShip ? isVerticalShip(placedShip[0], placedShip[1]) : false;
-			const { x, y }: { x: number | null, y: number | null } = (() => {
+			type coordsType = { x: number | null, y: number | null };
+			const { x, y }: coordsType = (() => {
 				if (placedShip) {
 					const fieldEl = fieldEls.find(fieldEl => fieldEl.id === placedShip[0]);
 					if (fieldEl) {
@@ -141,21 +161,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 				}
 				return { x: null, y: null };
 			})();
-			els.push(
-				<Ship
-					x={x}
-					y={y}
-					key={i}
-					endMoveCallback={shipEndMoveCallback}
-					moveCallback={shipMoveCallback}
-					isVertical={isVertical}
-					ref={refs[i]}
-					id={i}
-					size={possibleShip as ShipSizeType}
-					width={shipSize}
-					height={shipSize}
-				/>
-			);
+			els.push(createShip(x, y, i, isVertical, possibleShip as ShipSizeType, shipSize, shipSize));
 		});
 		setShipElsState(els);
 	}, [placedShips]);

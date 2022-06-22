@@ -48,12 +48,13 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 
 	useEffect(() => {
 		const current = ref.current;
-		if (placeX && placeY) {
+		const isValid = (coord: number | null | undefined) => {
+			return coord !== null && coord !== undefined;
+		};
+		if (isValid(placeX) && isValid(placeY)) {
 			current.style.position = 'absolute';
 			current.style.left = `${ placeX }px`;
 			current.style.top = `${ placeY }px`;
-			current.style.pointerEvents = 'none';
-			current.style.touchAction = 'none';
 		}
 		else {
 			current.style.position = 'static';
@@ -69,14 +70,15 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 	const setShifts = (e: any) => {
 		const current = ref.current;
 		const { x, y } = current.getBoundingClientRect();
-		const { pageX, pageY, clientX, clientY } = e;
+		const { clientX, clientY } = e;
 		const shiftX = calculateShift(clientX, x);
 		const shiftY = calculateShift(clientY, y);
 		setShiftX(shiftX);
 		setShiftY(shiftY);
 		current.style.position = 'absolute';
-		current.style.pointerEvents = 'none';
 		current.style.touchAction = 'none';
+		current.style.pointerEvents = 'none';
+		current.setPointerCapture(e.pointerId);
 		window.addEventListener('pointermove', drag);
 		window.addEventListener('pointerup', dragEnd);
 		window.addEventListener('wheel', switchIsVertical);
@@ -89,17 +91,21 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const drag = (e: any) => {
-		const current = ref.current;
+		e.stopImmediatePropagation();
+		e.preventDefault();
+		const current = e.target;
 		const { pageX, pageY } = e;
 		current.style.left = `${ pageX - shiftX }px`;
 		current.style.top = `${ pageY - shiftY }px`;
 		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const dragEnd = (e: any) => {
+		e.stopImmediatePropagation();
 		const current = ref.current;
 		current.style.pointerEvents = '';
 		current.style.zIndex = '';
 		current.style.touchAction = '';
+		current.releasePointerCapture(e.pointerId);
 		window.removeEventListener('pointermove', drag);
 		window.removeEventListener('pointerup', dragEnd);
 		window.removeEventListener('wheel', switchIsVertical);

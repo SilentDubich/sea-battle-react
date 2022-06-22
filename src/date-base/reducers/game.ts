@@ -438,6 +438,11 @@ export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) 
 	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;
 	const rowNumber = firstLocation[0];
 	const colNumber = firstLocation[1];
+	const isValid = (row: number, col: number) => {
+		if (row < 0 || row >= 10) return false;
+		if (col < 0 || col >= 10) return false;
+		return true;
+	};
 	const locations = (() => {
 		if (isVertical) return [ `${ (+lastLocation[0] + 1).toString() }${ colNumber }`, `${ (+firstLocation[0] - 1).toString() }${ colNumber }` ];
 		else return [ `${ rowNumber }${ (+lastLocation[1] + 1).toString() }`, `${ rowNumber }${ (+firstLocation[1] - 1).toString() }` ];
