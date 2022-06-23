@@ -443,10 +443,21 @@ export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) 
 		if (col < 0 || col >= 10) return false;
 		return true;
 	};
-	const locations = (() => {
-		if (isVertical) return [ `${ (+lastLocation[0] + 1).toString() }${ colNumber }`, `${ (+firstLocation[0] - 1).toString() }${ colNumber }` ];
-		else return [ `${ rowNumber }${ (+lastLocation[1] + 1).toString() }`, `${ rowNumber }${ (+firstLocation[1] - 1).toString() }` ];
-	})();
+	const pushLocation = (row: number, col: number, arr: Array<string>) => {
+		if (isValid(row, col)) arr.push(`${ row }${ col }`);
+	};
+	const getLocationPart = (locationPartForVertical: number, locationPartForHorizontal: number) => {
+		return isVertical ? locationPartForVertical : locationPartForHorizontal;
+	}
+	const locations: Array<string> = [];
+	const firstBumperRow = getLocationPart(+firstLocation[0] - 1, +rowNumber);
+	const lastBumperRow = getLocationPart(+lastLocation[0] + 1, +rowNumber);
+
+	const firstBumperCol = isVertical ? +colNumber : +firstLocation[1] - 1;
+	const lastBumperCol = isVertical ? +colNumber : +lastLocation[1] + 1;
+	pushLocation(firstBumperRow, firstBumperCol, locations);
+	pushLocation(lastBumperRow, lastBumperCol, locations);
+
 	bumperLocations.push(...locations);
 	borders.push(...locations);
 	const allLocations: Array<string> = [ ...locationToPlace, ...bumperLocations ];
@@ -458,10 +469,14 @@ export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) 
 		const colNumberRight = colNumber + 1;
 		const rowNumberTop = rowNumber - 1;
 		const rowNumberBottom = rowNumber + 1;
-		const bordersToPush = (() => {
-			if (isVertical) return [ `${ rowNumber }${ colNumberLeft }`, `${ rowNumber }${ colNumberRight }` ];
-			else return [ `${ rowNumberTop }${ colNumber }`, `${ rowNumberBottom }${ colNumber }` ];
-		})();
+		const bordersToPush: Array<string> = [];
+		const firstRow = getLocationPart(rowNumber, rowNumberTop);
+		const lastRow = getLocationPart(rowNumber, rowNumberBottom);
+
+		const firstCol = getLocationPart(colNumberLeft, colNumber);
+		const lastCol = getLocationPart(colNumberRight, colNumber);
+		pushLocation(firstRow, firstCol, bordersToPush);
+		pushLocation(lastRow, lastCol, bordersToPush);
 		borders.push(...bordersToPush);
 	});
 	return borders;

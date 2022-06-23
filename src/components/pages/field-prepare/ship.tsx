@@ -1,4 +1,4 @@
-import React, {FC, forwardRef, useEffect, useState} from 'react';
+import React, {FC, forwardRef, PointerEventHandler, useEffect, useState} from 'react';
 import FieldCss from '../../../reusable/components/field/field.module.css';
 import {ShipSizeType} from '../../../date-base/reducers/game';
 
@@ -67,6 +67,12 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 	const calculateShift = (clientCoord: number, shipCoord: number) => {
 		return clientCoord - shipCoord;
 	};
+	const getEvents = (pointerType: string): { eventMove: 'pointermove' | 'touchmove', eventEnd: 'pointerup' | 'touchend' } => {
+		const isDesktop = pointerType === 'mouse';
+		const eventMove = isDesktop ? 'pointermove' : 'touchmove';
+		const eventEnd = isDesktop ? 'pointerup' : 'touchend';
+		return { eventMove, eventEnd };
+	};
 	const setShifts = (e: any) => {
 		const current = ref.current;
 		const { x, y } = current.getBoundingClientRect();
@@ -78,9 +84,10 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		current.style.position = 'absolute';
 		current.style.touchAction = 'none';
 		current.style.pointerEvents = 'none';
-		current.setPointerCapture(e.pointerId);
-		window.addEventListener('pointermove', drag);
-		window.addEventListener('pointerup', dragEnd);
+		const { pointerType } = e;
+		const { eventMove, eventEnd } = getEvents(pointerType);
+		window.addEventListener(eventMove, drag);
+		window.addEventListener(eventEnd, dragEnd);
 		window.addEventListener('wheel', switchIsVertical);
 	};
 	let tempVertical = isVertical;
@@ -91,23 +98,23 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const drag = (e: any) => {
-		e.stopImmediatePropagation();
-		e.preventDefault();
-		const current = e.target;
-		const { pageX, pageY } = e;
+		const current = ref.current;
+		const touches = e.targetTouches && e.targetTouches[0];
+		const { pageX, pageY } = touches || e;
+		console.log(pageX, pageY, current)
 		current.style.left = `${ pageX - shiftX }px`;
 		current.style.top = `${ pageY - shiftY }px`;
 		moveCallback && moveCallback(current, tempVertical, size);
 	};
 	const dragEnd = (e: any) => {
-		e.stopImmediatePropagation();
 		const current = ref.current;
 		current.style.pointerEvents = '';
 		current.style.zIndex = '';
-		current.style.touchAction = '';
-		current.releasePointerCapture(e.pointerId);
-		window.removeEventListener('pointermove', drag);
-		window.removeEventListener('pointerup', dragEnd);
+		current.style.touchAction = 'auto';
+		const { pointerType } = e;
+		const { eventMove, eventEnd } = getEvents(pointerType);
+		window.removeEventListener(eventMove, drag);
+		window.removeEventListener(eventEnd, dragEnd);
 		window.removeEventListener('wheel', switchIsVertical);
 		endMoveCallback && endMoveCallback(current, tempVertical);
 		if (x && y) {

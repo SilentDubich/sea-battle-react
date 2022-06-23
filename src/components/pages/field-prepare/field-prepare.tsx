@@ -96,7 +96,6 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 		const fieldEl = myRef.current;
 		const fieldEls = [ ...fieldEl.children ];
 		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
-		console.log(locations)
 		setShootLocations(locations);
 	};
 	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {
