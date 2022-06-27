@@ -1,18 +1,18 @@
 {
   "files": {
-    "main.css": "/sea-battle-react/static/css/main.6ec46997.css",
-    "main.js": "/sea-battle-react/static/js/main.0eedf2b9.js",
+    "main.css": "/sea-battle-react/static/css/main.e43db400.css",
+    "main.js": "/sea-battle-react/static/js/main.118cc2ae.js",
     "static/js/787.a45da92e.chunk.js": "/sea-battle-react/static/js/787.a45da92e.chunk.js",
     "static/media/ship.svg": "/sea-battle-react/static/media/ship.d2b6c25e35e450719b54.svg",
     "static/media/hit.svg": "/sea-battle-react/static/media/hit.29e8ca06257ea4aaf845.svg",
     "static/media/miss.svg": "/sea-battle-react/static/media/miss.820ea73d111928ebf50e.svg",
     "index.html": "/sea-battle-react/index.html",
-    "main.6ec46997.css.map": "/sea-battle-react/static/css/main.6ec46997.css.map",
-    "main.0eedf2b9.js.map": "/sea-battle-react/static/js/main.0eedf2b9.js.map",
+    "main.e43db400.css.map": "/sea-battle-react/static/css/main.e43db400.css.map",
+    "main.118cc2ae.js.map": "/sea-battle-react/static/js/main.118cc2ae.js.map",
     "787.a45da92e.chunk.js.map": "/sea-battle-react/static/js/787.a45da92e.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6ec46997.css",
-    "static/js/main.0eedf2b9.js"
+    "static/css/main.e43db400.css",
+    "static/js/main.118cc2ae.js"
   ]
 }
