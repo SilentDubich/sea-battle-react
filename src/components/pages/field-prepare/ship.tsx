@@ -62,6 +62,7 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 			current.style.top = '';
 			current.style.pointerEvents = '';
 			current.style.touchAction = '';
+			setIsVerticalValue(false);
 		}
 	}, [ placeX, placeY ]);
 	const calculateShift = (clientCoord: number, shipCoord: number) => {
@@ -120,10 +121,14 @@ export const Ship = forwardRef<any, PropsType>(({ id, size, width, height, sizeF
 		if (x && y) {
 			current.style.left = `${ x }px`;
 			current.style.top = `${ y }px`;
+			setPlaceX(x);
+			setPlaceX(y);
 		}
 		else {
 			current.style.position = 'static';
 			setIsVerticalValue(false);
+			setPlaceX(null);
+			setPlaceX(null);
 		}
 	};
 	const classes = `${ isVerticalValue ? FieldCss.vertical_ship : FieldCss.horizontal_ship }`;

@@ -333,7 +333,6 @@ const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, fi
 };
 
 export const isVerticalShip = (firstLocation: string, secondLocation: string): boolean => {
-
 	if (!secondLocation) return false;
 	const firstLocationNumber = +firstLocation;
 	const secondLocationNumber = +secondLocation;

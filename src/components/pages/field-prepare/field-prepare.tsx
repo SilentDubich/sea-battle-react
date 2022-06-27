@@ -170,7 +170,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 				<Field isPrepare={true} ref={myRef} shootLocations={shootLocations} shipsLocations={playerShipsLocations}/>
 			</div>
 			<div className={ReusableCss.footer}>
-				<div onClick={() => playerShipsLocations && startGame()} className={startGameClasses}>Начать игру</div>
+				<div onClick={() => isAllShipsPlaced && startGame()} className={startGameClasses}>Начать игру</div>
 				<div onClick={() => setPlayerShips()} className={buttonClasses}>Сгенерировать случайно</div>
 			</div>
 			<div className={FieldPrepareCss.ships_container}>
