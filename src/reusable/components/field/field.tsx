@@ -1,7 +1,7 @@
 import React, {FC, forwardRef, ReactElement, useImperativeHandle, useRef} from 'react';
 import FieldCss from './field.module.css';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
-import {FieldSizeType, getPossibleLocations, ShipsLocationsType} from '../../../date-base/reducers/game';
+import {FieldSizeType, gameActions, getPossibleLocations, ShipsLocationsType} from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
 import {connect} from 'react-redux';
 import {Ship} from '../../../components/pages/field-prepare/ship';
@@ -13,6 +13,7 @@ type PropsType = {
 	isPrepare?: boolean,
 	shipsLocations?: ShipsLocationsType | null,
 	fieldItemSize?: number,
+	isGameEnd: boolean,
 	shootCallback?: Function,
 	shootLocations?: {
 		[key: string]: number | null
@@ -23,6 +24,7 @@ const Field = forwardRef<any, PropsType>(({
       fieldTitle,
       isBlockShoot,
       fieldSize,
+      isGameEnd,
       shipsLocations,
       fieldItemSize,
       shootCallback,
@@ -52,9 +54,10 @@ const Field = forwardRef<any, PropsType>(({
 			if (isMiss) classes += ` ${ FieldCss.miss }`;
 			return classes;
 		})();
+		const isAllowedShoot = !isBlockShoot && !isGameEnd;
 		fieldItemEls.push(
 			<div
-				onClick={() => !isBlockShoot && shootCallback && shootCallback(location)}
+				onClick={() => isAllowedShoot && shootCallback && shootCallback(location)}
 				key={location}
 				id={location}
 				className={classes}
@@ -74,9 +77,11 @@ const Field = forwardRef<any, PropsType>(({
 
 
 const mapStateToProps = (state: AppStateType) => {
+	const { fieldSize, isBlockShoot, isGameEnd } = state.gameReducer;
 	return {
-		fieldSize: state.gameReducer.fieldSize,
-		isBlockShoot: state.gameReducer.isBlockShoot
+		fieldSize,
+		isGameEnd,
+		isBlockShoot
 	}
 };
 

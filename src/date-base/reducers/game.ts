@@ -13,6 +13,8 @@ export type ShipsLocationsType = {
 	[key: string]: number
 };
 
+export type PlayerTypes = 'player' | 'bot';
+
 export type ShipsType = {
 	[key: number]: ShipType
 };
@@ -36,14 +38,16 @@ export type PlayerType = {
 	}
 };
 
+type ShootsType = {
+	[key: string]: number | null
+};
+
 type BattleDataType = {
-	shoots?: {
-		[key: string]: number | null
-	},
+	shoots?: ShootsType,
 	firstHitNotSunkShip?: string | null,
 	lastShootCoord?: string | null,
 	possibleShoots?: Array<string>
-}
+};
 
 export type BotType = {
 	shipsParams: ShipsParamsType,
@@ -55,7 +59,7 @@ enum ProbabilitiesEnum {
 	'NORMAL' = 0.2,
 	'HARD' = 0.5,
 	'VERY_HARD' = 0.8
-}
+};
 
 export const gameActions = {
 	setMode: (mode: ModeType) => ({ type: 'SET_MODE', mode } as const),
@@ -67,7 +71,9 @@ export const gameActions = {
 	setBotShips: () => ({ type: 'SET_BOT_SHIPS' } as const),
 	startGame: () => ({ type: 'START_GAME' } as const),
 	isBlockShoot: (value: boolean) => ({ type: 'IS_BLOCK_SHOOT', value } as const),
-	updatePlayer: (player: PlayerType | BotType, playerType: 'player' | 'bot') => ({ type: 'UPDATE_PLAYER', player, playerType } as const)
+	setWinner: (playerType: PlayerTypes) => ({ type: 'SET_WINNER', playerType } as const),
+	reset: () => ({ type: 'RESET' } as const),
+	updatePlayer: (player: PlayerType | BotType, playerType: PlayerTypes) => ({ type: 'UPDATE_PLAYER', player, playerType } as const)
 };
 
 type GameActionType = InferActionsTypes<typeof gameActions>;
@@ -81,7 +87,9 @@ export type GameStateType = {
 	isStarted: IsStartedType,
 	player?: PlayerType,
 	bot?: BotType,
-	isBlockShoot: boolean
+	isBlockShoot: boolean,
+	isGameEnd: boolean,
+	winner: PlayerTypes | null
 };
 
 const defaultState = {
@@ -89,7 +97,9 @@ const defaultState = {
 	fieldSize: null as FieldSizeType,
 	difficulty: null as DifficultyType,
 	isStarted: false as IsStartedType,
-	isBlockShoot: false as boolean
+	isBlockShoot: false as boolean,
+	isGameEnd: false as boolean,
+	winner: null
 };
 
 export const playerShootThunk = (field: string): GameThunkType => {
@@ -105,16 +115,18 @@ export const playerShootThunk = (field: string): GameThunkType => {
 		if (!tempPlayer.shoots || !tempPlayer.hasOwnProperty('shoots')) tempPlayer.shoots = {};
 		if (tempPlayer.shoots.hasOwnProperty(field)) return;
 		const ship = botShips[field] !== undefined ? botShips[field] : null;
+		const playerType: PlayerTypes = 'player';
 		tempPlayer.shoots[field] = ship;
 		if (ship !== null) {
 			hitShip(tempBot, tempPlayer, field, ship);
-			dispatch(gameActions.updatePlayer(tempPlayer, 'player'));
+			dispatch(gameActions.updatePlayer(tempPlayer, playerType));
+			if (isGameEnd(fieldSize, tempPlayer.shoots)) dispatch(gameActions.setWinner(playerType));
 		}
 		else {
 			if (!tempBot.hasOwnProperty('battleData') || !tempBot.battleData) tempBot.battleData = {};
 			if (!tempBot.battleData.hasOwnProperty('possibleShoots')) tempBot.battleData.possibleShoots = getPossibleLocations(fieldSize);
 			if (!tempBot.battleData.hasOwnProperty('shoots')) tempBot.battleData.shoots = {};
-			dispatch(gameActions.updatePlayer(tempPlayer, 'player'));
+			dispatch(gameActions.updatePlayer(tempPlayer, playerType));
 			await botShoot(tempPlayer, tempBot, fieldSize, difficulty);
 		}
 		dispatch(gameActions.updatePlayer(tempBot, 'bot'));
@@ -122,8 +134,60 @@ export const playerShootThunk = (field: string): GameThunkType => {
 	};
 };
 
+// const setResultBotShoot = (
+// 	player: PlayerType,
+// 	bot: BotType,
+// 	ship: number | null,
+// 	battleData: BattleDataType,
+// 	shoot: string,
+// 	fieldSize: FieldSizeType,
+// 	difficulty: DifficultyType,
+// 	possibleShoots: Array<string>
+// ): GameThunkType => {
+// 	return async (dispatch) => {
+// 		possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
+// 		if (ship === null) {
+// 			battleData.lastShootCoord = shoot;
+// 			dispatch(gameActions.updatePlayer(bot, 'bot'));
+// 			return;
+// 		}
+// 		const isSunk = hitShip(player, bot, shoot, ship);
+// 		if (isSunk) battleData.firstHitNotSunkShip = null;
+// 		battleData.lastShootCoord = shoot;
+// 		dispatch(gameActions.updatePlayer(bot, 'bot'));
+// 		// if (isGameEnd(fieldSize, battleData.shoots)) return;
+// 		await botShoot(player, bot, fieldSize, difficulty);
+// 	}
+// };
+
+const setResultBotShoot = async (
+	player: PlayerType,
+	bot: BotType,
+	ship: number | null,
+	battleData: BattleDataType,
+	shoot: string,
+	fieldSize: FieldSizeType,
+	difficulty: DifficultyType,
+	possibleShoots: Array<string>
+) => {
+	possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
+	const dispatch = store.dispatch;
+	const playerType = 'bot';
+	if (ship === null) {
+		battleData.lastShootCoord = shoot;
+		dispatch(gameActions.updatePlayer(bot, playerType));
+		return;
+	}
+	const isSunk = hitShip(player, bot, shoot, ship);
+	if (isSunk) battleData.firstHitNotSunkShip = null;
+	battleData.lastShootCoord = shoot;
+	dispatch(gameActions.updatePlayer(bot, playerType));
+	if (isGameEnd(fieldSize, battleData.shoots)) return dispatch(gameActions.setWinner(playerType));
+	await botShoot(player, bot, fieldSize, difficulty);
+};
+
 export const gameReducer = (state: GameStateType = defaultState, action: GameActionType): GameStateType => {
-	const { mode, difficulty, isStarted, fieldSize, player } = state;
+	const { mode, difficulty, isStarted, fieldSize, player, winner } = state;
 	switch (action.type) {
 		case 'SET_MODE':
 			return { ...state, mode: action.mode };
@@ -151,6 +215,11 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 			return { ...state, [action.playerType]: action.player }
 		case 'IS_BLOCK_SHOOT':
 			return { ...state, isBlockShoot: action.value }
+		case 'RESET':
+			return { ...defaultState };
+		case 'SET_WINNER':
+			if (winner) return state;
+			return { ...state, winner: action.playerType, isGameEnd: true };
 		case 'SET_SHIP_LOCATION':
 			const shipParams: ShipsParamsType = player?.shipsParams || { ships: {}, locations: {} };
 			const shipLocations = { ...shipParams.locations };
@@ -280,30 +349,6 @@ const botShoot = async (player: PlayerType, bot: BotType, fieldSize: FieldSizeTy
 	});
 };
 
-const setResultBotShoot = async (
-	player: PlayerType,
-	bot: BotType,
-	ship: number | null,
-	battleData: BattleDataType,
-	shoot: string,
-	fieldSize: FieldSizeType,
-	difficulty: DifficultyType,
-	possibleShoots: Array<string>
-) => {
-	possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
-	const dispatch = store.dispatch;
-	if (ship === null) {
-		battleData.lastShootCoord = shoot;
-		dispatch(gameActions.updatePlayer(bot, 'bot'));
-		return;
-	}
-	const isSunk = hitShip(player, bot, shoot, ship);
-	if (isSunk) battleData.firstHitNotSunkShip = null;
-	battleData.lastShootCoord = shoot;
-	dispatch(gameActions.updatePlayer(bot, 'bot'));
-	await botShoot(player, bot, fieldSize, difficulty);
-};
-
 const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, field: string, ship: number): boolean => {
 	const shipInShips = target.shipsParams.ships[ship];
 	const hits = shipInShips.hits;
@@ -363,6 +408,20 @@ export const getPossibleLocations = (fieldSize: FieldSizeType): Array<string> =>
 		}
 	}
 	return locations;
+};
+
+const getMaximumPossibleHits = (fieldSize: FieldSizeType): number => {
+	return getPossibleShips(fieldSize)?.reduce((prev, curr) => prev + curr, 0) || 0;
+};
+
+const isGameEnd = (fieldSize: FieldSizeType, shoots: ShootsType | undefined) => {
+	if (!shoots) return false;
+	const maximumPossibleHits = getMaximumPossibleHits(fieldSize);
+	let hitsCounts = 0;
+	for (const [ key, value  ] of Object.entries(shoots)) {
+		if (value !== null) hitsCounts++;
+	}
+	return maximumPossibleHits === hitsCounts;
 };
 
 const createShips = (fieldSize: FieldSizeType): ShipsParamsType => {
