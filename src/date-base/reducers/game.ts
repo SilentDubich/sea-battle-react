@@ -59,7 +59,7 @@ enum ProbabilitiesEnum {
 	'NORMAL' = 0.2,
 	'HARD' = 0.5,
 	'VERY_HARD' = 0.8
-};
+}
 
 export const gameActions = {
 	setMode: (mode: ModeType) => ({ type: 'SET_MODE', mode } as const),
@@ -103,7 +103,9 @@ const defaultState = {
 };
 
 export const playerShootThunk = (field: string): GameThunkType => {
+	debugger
 	return async (dispatch) => {
+		debugger
 		dispatch(gameActions.isBlockShoot(true));
 		const state: AppStateType = store.getState();
 		const { gameReducer } = state;

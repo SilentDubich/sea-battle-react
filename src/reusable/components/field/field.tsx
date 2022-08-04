@@ -1,10 +1,9 @@
-import React, {FC, forwardRef, ReactElement, useImperativeHandle, useRef} from 'react';
+import React, {forwardRef, ReactElement} from 'react';
 import FieldCss from './field.module.css';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
-import {FieldSizeType, gameActions, getPossibleLocations, ShipsLocationsType} from '../../../date-base/reducers/game';
+import {FieldSizeType, getPossibleLocations, ShipsLocationsType} from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
-import {connect} from 'react-redux';
-import {Ship} from '../../../components/pages/field-prepare/ship';
+import {useDispatch, useSelector} from 'react-redux';
 
 type PropsType = {
 	fieldTitle?: string,
@@ -13,25 +12,31 @@ type PropsType = {
 	isPrepare?: boolean,
 	shipsLocations?: ShipsLocationsType | null,
 	fieldItemSize?: number,
-	isGameEnd: boolean,
 	shootCallback?: Function,
 	shootLocations?: {
 		[key: string]: number | null
 	} | null
 };
 
-const Field = forwardRef<any, PropsType>(({
+export const Field = forwardRef<any, PropsType>(({
       fieldTitle,
-      isBlockShoot,
-      fieldSize,
-      isGameEnd,
       shipsLocations,
       fieldItemSize,
       shootCallback,
       shootLocations,
       isPrepare
 }, ref) => {
+	const dispatch = useDispatch();
+	const { fieldSize, isGameEnd, isBlockShoot } = useSelector((state: AppStateType) => {
+		const { fieldSize, isBlockShoot, isGameEnd } = state.gameReducer;
+		return {
+			fieldSize,
+			isGameEnd,
+			isBlockShoot
+		};
+	});
 	if (!fieldSize) return null;
+
 	const fieldItemEls: Array<ReactElement> = [];
 	const maximumWidth = window.screen.availWidth;
 	const maximumItemSize = 60;
@@ -57,7 +62,7 @@ const Field = forwardRef<any, PropsType>(({
 		const isAllowedShoot = !isBlockShoot && !isGameEnd;
 		fieldItemEls.push(
 			<div
-				onClick={() => isAllowedShoot && shootCallback && shootCallback(location)}
+				onClick={() => isAllowedShoot && shootCallback && shootCallback(location)(dispatch)}
 				key={location}
 				id={location}
 				className={classes}
@@ -74,15 +79,3 @@ const Field = forwardRef<any, PropsType>(({
 		</div>
 	)
 });
-
-
-const mapStateToProps = (state: AppStateType) => {
-	const { fieldSize, isBlockShoot, isGameEnd } = state.gameReducer;
-	return {
-		fieldSize,
-		isGameEnd,
-		isBlockShoot
-	}
-};
-
-export default connect(mapStateToProps, null, null, { forwardRef: true })(Field);

@@ -1,31 +1,35 @@
-import React, {ComponentType, FC, ReactElement, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import React, {ReactElement, useLayoutEffect, useRef, useState} from 'react';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 import FieldPrepareCss from './field-prepare.module.css';
-import Field from '../../../reusable/components/field/field';
-import {compose} from 'redux';
-import {connect} from 'react-redux';
+import {Field} from '../../../reusable/components/field/field';
+import {useDispatch, useSelector} from 'react-redux';
 import {
-	FieldSizeType,
 	gameActions,
 	getBorders,
 	getPossibleShips,
 	isVerticalShip,
-	PlayerType,
 	ShipSizeType,
 	ShipsLocationsType
 } from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
 import {Ship} from './ship';
 
-type PropsType = {
-	setPlayerShips: typeof gameActions.setPlayerShips,
-	startGame: typeof gameActions.startGame,
-	setShipLocation: typeof gameActions.setShipLocation,
-	player: PlayerType | null,
-	fieldSize: FieldSizeType
-};
 
-const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldSize, setShipLocation }) => {
+export const FieldPrepare = () => {
+	const dispatch = useDispatch();
+	const setPlayerShips = () => {
+		dispatch(gameActions.setPlayerShips());
+	};
+	const startGame = () => {
+		dispatch(gameActions.startGame());
+	};
+	const setShipLocation = (locations: Array<string>, shipId: number) => {
+		dispatch(gameActions.setShipLocation(locations, shipId));
+	};
+	const { player, fieldSize } = useSelector((state: AppStateType) => {
+		const { player, fieldSize } = state.gameReducer;
+		return { player, fieldSize };
+	});
 	const buttonClasses = `${ ReusableCss.button }`;
 	const possibleShips: Array<number> | null = getPossibleShips(fieldSize);
 	let isAllShipsPlaced = false;
@@ -63,7 +67,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 			setRefs(tempRefs);
 		}
 	}, []);
-	const myRef: any = useRef();
+	const fieldRef: any = useRef();
 	const [ shootLocations, setShootLocations ] = useState<{[key: string]: number | null} | null>({});
 	const getFieldMatches = (shipEls: any, fieldEls: any) => {
 		const fieldMatchesIds: Array<string> = [];
@@ -93,7 +97,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 	const shipMoveCallback = (shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
 		const shipEls = [ ...shipRef.children ];
-		const fieldEl = myRef.current;
+		const fieldEl = fieldRef.current;
 		const fieldEls = [ ...fieldEl.children ];
 		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
 		setShootLocations(locations);
@@ -101,7 +105,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
 		const shipEls = [ ...shipRef.children ];
-		const fieldEl = myRef.current;
+		const fieldEl = fieldRef.current;
 		const fieldEls = [ ...fieldEl.children ];
 		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
 		let isAllowedSetShip = true;
@@ -136,7 +140,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 				height={height}
 			/>
 		};
-		const current = myRef.current;
+		const current = fieldRef.current;
 		const fieldEls = [ ...current.children ];
 		if (!playerShipsLocations && possibleShips) {
 			setShipElsState(possibleShips.map((possibleShip, i) => createShip(null, null, i, false, possibleShip as ShipSizeType, shipSize, shipSize)));
@@ -167,7 +171,7 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 	return (
 		<div className={ReusableCss.container}>
 			<div className={FieldPrepareCss.field}>
-				<Field isPrepare={true} ref={myRef} shootLocations={shootLocations} shipsLocations={playerShipsLocations}/>
+				<Field isPrepare={true} ref={fieldRef} shootLocations={shootLocations} shipsLocations={playerShipsLocations}/>
 			</div>
 			<div className={ReusableCss.footer}>
 				<div onClick={() => isAllShipsPlaced && startGame()} className={startGameClasses}>Начать игру</div>
@@ -180,18 +184,5 @@ const FieldPrepare: FC<PropsType> = ({ setPlayerShips, player, startGame, fieldS
 	)
 };
 
-
-
-const mapStateToProps = (state: AppStateType) => {
-	return {
-		player: state.gameReducer.player || null,
-		fieldSize: state.gameReducer.fieldSize
-	};
-};
-
-
-export default compose<ComponentType>(
-	connect(mapStateToProps, { setPlayerShips: gameActions.setPlayerShips, startGame: gameActions.startGame, setShipLocation: gameActions.setShipLocation })
-)(FieldPrepare);
 
 

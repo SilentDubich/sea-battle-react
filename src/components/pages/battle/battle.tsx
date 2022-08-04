@@ -1,29 +1,30 @@
-import React, {ComponentType, FC} from 'react';
-import {compose} from 'redux';
-import {connect} from 'react-redux';
-import Field from '../../../reusable/components/field/field';
+import React from 'react';
+import {useDispatch, useSelector} from 'react-redux';
+import {Field} from '../../../reusable/components/field/field';
 import {
-	BotType,
 	gameActions,
 	playerShootThunk,
-	PlayerType,
-	PlayerTypes,
 	ShipsLocationsType
 } from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
 import BattleCss from './battle.module.css';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 
-type PropsType = {
-	player: PlayerType | null,
-	bot: BotType | null,
-	winner: PlayerTypes,
-	reset: Function,
-	playerShootThunk: typeof playerShootThunk,
-	isBlockShoot: boolean
-};
 
-const Battle: FC<PropsType> = ({ player, playerShootThunk, bot, isBlockShoot, winner, reset }) => {
+export const Battle = () => {
+	const { player, bot, winner, isBlockShoot } = useSelector((state: AppStateType) => {
+		const { player, bot, winner, isBlockShoot } = state.gameReducer;
+		return {
+			player: player || null,
+			bot: bot || null,
+			winner,
+			isBlockShoot
+		};
+	});
+	const dispatch = useDispatch();
+	const reset = () => {
+		dispatch(gameActions.reset());
+	};
 	const playerShipsLocations: ShipsLocationsType | null = player ? player.shipsParams.locations : null;
 	const playerShoots = player && player.shoots ? player.shoots : null;
 	const botShoots = bot && bot.battleData && bot.battleData.shoots ? bot.battleData.shoots : null;
@@ -44,16 +45,30 @@ const Battle: FC<PropsType> = ({ player, playerShootThunk, bot, isBlockShoot, wi
 	)
 };
 
-const mapStateToProps = (state: AppStateType) => {
-	const { player, bot, winner, isBlockShoot } = state.gameReducer;
-	return {
-		player: player || null,
-		bot: bot || null,
-		winner,
-		isBlockShoot
-	}
-};
 
-export default compose<ComponentType> (
-	connect(mapStateToProps, { reset: gameActions.reset, playerShootThunk })
-)(Battle);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

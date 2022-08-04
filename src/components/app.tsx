@@ -1,21 +1,19 @@
-import React, {ComponentType, FC} from 'react';
-import Main from './pages/main/main';
-import {GameStateType} from '../date-base/reducers/game';
-import Difficulty from './pages/difficulty/difficulty';
-import FieldChoose from './pages/field-choose/field-choose';
-import FieldPrepare from './pages/field-prepare/field-prepare';
-import {compose} from 'redux';
-import {connect} from 'react-redux';
+import React from 'react';
+import {Main} from './pages/main/main';
+import {Difficulty} from './pages/difficulty/difficulty';
+import {FieldChoose} from './pages/field-choose/field-choose';
+import {FieldPrepare} from './pages/field-prepare/field-prepare';
+import {Battle} from './pages/battle/battle';
+import {useSelector} from 'react-redux';
 import {AppStateType} from '../date-base/store';
-import BackButton from './back-button';
-import Battle from './pages/battle/battle';
+import {BackButton} from './back-button';
 
-type PropsType = {
-	gameState: GameStateType
-}
 
-const App: FC<PropsType> = ({ gameState }) => {
-	const { difficulty, mode, fieldSize, isStarted } = gameState;
+export const App = () => {
+	const { difficulty, mode, fieldSize, isStarted } = useSelector((state: AppStateType) => {
+		const { difficulty, mode, fieldSize, isStarted } = state.gameReducer;
+		return { difficulty, mode, fieldSize, isStarted };
+	});
 	const componentToRender = (() => {
 		if (!mode) return <Main/>;
 		if (!difficulty) return <Difficulty/>;
@@ -29,15 +27,4 @@ const App: FC<PropsType> = ({ gameState }) => {
 			{ componentToRender }
 		</>
 	);
-}
-
-const stateToProps = (state: AppStateType) => {
-	return {
-		gameState: state.gameReducer
-	}
-}
-
-
-export default compose<ComponentType>(
-	connect(stateToProps, null)
-)(App);
+};

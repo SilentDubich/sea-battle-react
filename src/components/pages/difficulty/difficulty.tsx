@@ -1,14 +1,14 @@
-import React, {ComponentType, FC} from 'react';
+import React from 'react';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
-import {connect} from 'react-redux';
-import {compose} from 'redux';
-import {gameActions} from '../../../date-base/reducers/game';
+import {useDispatch} from 'react-redux';
+import {DifficultyType, gameActions} from '../../../date-base/reducers/game';
 
-type PropsType = {
-	setDifficulty: typeof gameActions.setDifficulty
-};
 
-const Difficulty: FC<PropsType> = ({ setDifficulty }) => {
+export const Difficulty = () => {
+	const dispatch = useDispatch();
+	const setDifficulty = (difficulty: DifficultyType) => {
+		dispatch(gameActions.setDifficulty(difficulty));
+	};
 	return (
 		<div className={ReusableCss.container}>
 			<div className={ReusableCss.main_title}>Выберите уровень сложности</div>
@@ -21,8 +21,3 @@ const Difficulty: FC<PropsType> = ({ setDifficulty }) => {
 		</div>
 	)
 };
-
-
-export default compose<ComponentType>(
-	connect(null, { setDifficulty: gameActions.setDifficulty })
-)(Difficulty);
