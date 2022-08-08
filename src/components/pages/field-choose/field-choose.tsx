@@ -14,5 +14,5 @@ export const FieldChoose = () => {
 			<div onClick={() => setFieldSize(8)} className={ReusableCss.item}>8*8</div>
 			<div onClick={() => setFieldSize(10)} className={ReusableCss.item}>10*10</div>
 		</div>
-	)
-}
+	);
+};

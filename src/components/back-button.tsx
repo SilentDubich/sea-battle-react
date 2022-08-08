@@ -10,10 +10,10 @@ export const BackButton = () => {
 	const dispatch = useDispatch();
 	const back = () => {
 		dispatch(gameActions.back());
-	}
+	};
 	if (!mode) return null;
 	const classes = `${ BackButtonCss.btn } ${ ReusableCss.button }`;
 	return (
 		<div onClick={back} className={classes}>Назад</div>
-	)
+	);
 };

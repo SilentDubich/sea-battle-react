@@ -1,4 +1,4 @@
-import React, {ReactElement, useLayoutEffect, useRef, useState} from 'react';
+import React, {ReactElement, useCallback, useLayoutEffect, useRef, useState} from 'react';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 import FieldPrepareCss from './field-prepare.module.css';
 import {Field} from '../../../reusable/components/field/field';
@@ -44,9 +44,8 @@ export const FieldPrepare = () => {
 		[key: number]: Array<string>
 	} = {};
 	const [ shipElsState, setShipElsState ] = useState<any>([]);
-	const [ refs, setRefs ] = useState<{[key: number]: any}>({});
 	const [ placedShips, setPlacedShips ] = useState<{[key: number]: Array<string>}>({});
-	let tempRefs: {[key: number]: any} = {};
+
 
 	useLayoutEffect(() => {
 		if (playerShipsLocations) {
@@ -59,17 +58,14 @@ export const FieldPrepare = () => {
 			setPlacedShips(tempPlacedShips);
 		}
 	}, [playerShipsLocations]);
-	useLayoutEffect(() => {
-		if (possibleShips) {
-			possibleShips.forEach((ship, i) => {
-				if (!tempRefs[i]) tempRefs[i] = React.createRef();
-			});
-			setRefs(tempRefs);
-		}
-	}, []);
+
+
 	const fieldRef: any = useRef();
-	const [ shootLocations, setShootLocations ] = useState<{[key: string]: number | null} | null>({});
-	const getFieldMatches = (shipEls: any, fieldEls: any) => {
+	type LocationsType = {[key: string]: number | null};
+	const [ shootLocations, setShootLocations ] = useState<LocationsType | null>({});
+
+
+	const getFieldMatches = useCallback((shipEls: any, fieldEls: any) => {
 		const fieldMatchesIds: Array<string> = [];
 		if (!shipEls || !fieldEls) return fieldMatchesIds;
 		shipEls.forEach((shipEl: any) => {
@@ -82,32 +78,38 @@ export const FieldPrepare = () => {
 			});
 		});
 		return fieldMatchesIds;
-	};
-	const getPresumptiveBorders = (shipEls: any, fieldEls: any, isVertical: boolean, shipRef: any) => {
+	}, []);
+
+
+	const getPresumptiveBorders = useCallback((shipRef: any, fieldRef: any, isVertical: boolean): LocationsType => {
+		const shipEls = [ ...shipRef.children ];
+		const fieldEl = fieldRef.current;
+		const fieldEls = [ ...fieldEl.children ];
 		const fieldMatchesIds: Array<string> = getFieldMatches(shipEls, fieldEls);
 		const borders = getBorders(fieldMatchesIds, isVertical);
-		const locations: {[key: string]: number | null} = {};
+		const locations: LocationsType = {};
 		borders.forEach(border => {
 			const isLocation = fieldMatchesIds.find(fieldMatchesId => fieldMatchesId === border);
 			const ship = playerShipsLocations && playerShipsLocations[border] !== undefined ? playerShipsLocations[border] : null;
 			if (!isLocation) locations[border] = ship !== null && ship !== +shipRef.id ? ship : null;
 		});
 		return locations;
-	};
-	const shipMoveCallback = (shipRef: any, isVertical: boolean) => {
+	}, []);
+
+
+	const shipMoveCallback = useCallback((shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
-		const shipEls = [ ...shipRef.children ];
-		const fieldEl = fieldRef.current;
-		const fieldEls = [ ...fieldEl.children ];
-		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
+		const locations: LocationsType = getPresumptiveBorders(shipRef, fieldRef, isVertical);
 		setShootLocations(locations);
-	};
-	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {
+	}, []);
+
+
+	const shipEndMoveCallback = useCallback((shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
 		const shipEls = [ ...shipRef.children ];
 		const fieldEl = fieldRef.current;
 		const fieldEls = [ ...fieldEl.children ];
-		const locations: {[key: string]: number | null} = getPresumptiveBorders(shipEls, fieldEls, isVertical, shipRef);
+		const locations: LocationsType = getPresumptiveBorders(shipRef, fieldRef, isVertical);
 		let isAllowedSetShip = true;
 		for (const [ key, value ] of Object.entries(locations)) {
 			if (value) isAllowedSetShip = false;
@@ -116,7 +118,8 @@ export const FieldPrepare = () => {
 		if (!isAllowedSetShip) return;
 		const fieldMatchesIds: Array<string> = getFieldMatches(shipEls, fieldEls);
 		setShipLocation(fieldMatchesIds, +shipRef.id);
-	}
+	}, []);
+
 	const maximumWidth = window.screen.availWidth;
 	const maximumItemSize = 60;
 	const maximumPossibleItemSize = fieldSize ? maximumWidth / fieldSize : maximumItemSize;
@@ -124,6 +127,8 @@ export const FieldPrepare = () => {
 		if (maximumPossibleItemSize >= maximumItemSize) return maximumItemSize;
 		return maximumPossibleItemSize;
 	})();
+
+
 	useLayoutEffect(() => {
 		const createShip = (x: number | null, y: number | null, index: number, isVertical: boolean, size: ShipSizeType, width: number, height: number) => {
 			return <Ship
@@ -133,7 +138,6 @@ export const FieldPrepare = () => {
 				endMoveCallback={shipEndMoveCallback}
 				moveCallback={shipMoveCallback}
 				isVertical={isVertical}
-				ref={refs[index]}
 				id={index}
 				size={size as ShipSizeType}
 				width={width}
@@ -154,6 +158,11 @@ export const FieldPrepare = () => {
 			const { x, y }: coordsType = (() => {
 				if (placedShip) {
 					const fieldEl = fieldEls.find(fieldEl => fieldEl.id === placedShip[0]);
+					console.group();
+					console.log('fieldEl', fieldEl);
+					console.log('placedShip', placedShip);
+					console.log('placedShip[0]', placedShip[0]);
+
 					if (fieldEl) {
 						const { x, y } = fieldEl.getBoundingClientRect();
 						const scrollY = window.scrollY;
@@ -164,10 +173,15 @@ export const FieldPrepare = () => {
 				}
 				return { x: null, y: null };
 			})();
+			console.log('x', x);
+			console.log('y', y);
+			console.groupEnd();
 			els.push(createShip(x, y, i, isVertical, possibleShip as ShipSizeType, shipSize, shipSize));
 		});
 		setShipElsState(els);
 	}, [placedShips]);
+
+
 	return (
 		<div className={ReusableCss.container}>
 			<div className={FieldPrepareCss.field}>

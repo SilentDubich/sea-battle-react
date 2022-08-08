@@ -12,12 +12,10 @@ export const Difficulty = () => {
 	return (
 		<div className={ReusableCss.container}>
 			<div className={ReusableCss.main_title}>Выберите уровень сложности</div>
-			<div>
-				<div onClick={() => setDifficulty('EASY')} className={ReusableCss.item}>Легкий</div>
-				<div onClick={() => setDifficulty('NORMAL')} className={ReusableCss.item}>Средний</div>
-				<div onClick={() => setDifficulty('HARD')} className={ReusableCss.item}>Высокий</div>
-				<div onClick={() => setDifficulty('VERY_HARD')} className={ReusableCss.item}>Очень высокий</div>
-			</div>
+			<div onClick={() => setDifficulty('EASY')} className={ReusableCss.item}>Легкий</div>
+			<div onClick={() => setDifficulty('NORMAL')} className={ReusableCss.item}>Средний</div>
+			<div onClick={() => setDifficulty('HARD')} className={ReusableCss.item}>Высокий</div>
+			<div onClick={() => setDifficulty('VERY_HARD')} className={ReusableCss.item}>Очень высокий</div>
 		</div>
-	)
+	);
 };
