@@ -14,6 +14,9 @@ import {
 import {AppStateType} from '../../../date-base/store';
 import {Ship} from './ship';
 
+const shipsSelector = (state: AppStateType) => state.gameReducer.player?.shipsParams.ships;
+const locationsSelector = (state: AppStateType) => state.gameReducer.player?.shipsParams.locations || null;
+const fieldSizeSelector = (state: AppStateType) => state.gameReducer.fieldSize;
 
 export const FieldPrepare = () => {
 	const dispatch = useDispatch();
@@ -21,25 +24,24 @@ export const FieldPrepare = () => {
 		dispatch(gameActions.setPlayerShips());
 	};
 	const startGame = () => {
+		if (!isAllShipsPlaced) return;
 		dispatch(gameActions.startGame());
 	};
 	const setShipLocation = (locations: Array<string>, shipId: number) => {
 		dispatch(gameActions.setShipLocation(locations, shipId));
 	};
-	const { player, fieldSize } = useSelector((state: AppStateType) => {
-		const { player, fieldSize } = state.gameReducer;
-		return { player, fieldSize };
-	});
+
+	const fieldSize = useSelector(fieldSizeSelector);
+	const ships = useSelector(shipsSelector);
+	const playerShipsLocations: ShipsLocationsType | null = useSelector(locationsSelector);
+
 	const buttonClasses = `${ ReusableCss.button }`;
 	const possibleShips: Array<number> | null = getPossibleShips(fieldSize);
 	let isAllShipsPlaced = false;
-	if (player) {
-		const { shipsParams } = player;
-		const { ships } = shipsParams;
+	if (ships) {
 		if (possibleShips && ships && possibleShips.length === Object.keys(ships).length) isAllShipsPlaced = true;
 	}
 	const startGameClasses = `${ buttonClasses } ${ !isAllShipsPlaced && ReusableCss.disabled }`;
-	const playerShipsLocations: ShipsLocationsType | null = player ? player.shipsParams.locations : null;
 	const tempPlacedShips: {
 		[key: number]: Array<string>
 	} = {};
@@ -93,18 +95,19 @@ export const FieldPrepare = () => {
 			const ship = playerShipsLocations && playerShipsLocations[border] !== undefined ? playerShipsLocations[border] : null;
 			if (!isLocation) locations[border] = ship !== null && ship !== +shipRef.id ? ship : null;
 		});
+
 		return locations;
-	}, []);
+	}, [playerShipsLocations]);
 
 
-	const shipMoveCallback = useCallback((shipRef: any, isVertical: boolean) => {
+	const shipMoveCallback = (shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
 		const locations: LocationsType = getPresumptiveBorders(shipRef, fieldRef, isVertical);
 		setShootLocations(locations);
-	}, []);
+	};
 
 
-	const shipEndMoveCallback = useCallback((shipRef: any, isVertical: boolean) => {
+	const shipEndMoveCallback = (shipRef: any, isVertical: boolean) => {
 		if (!shipRef) return;
 		const shipEls = [ ...shipRef.children ];
 		const fieldEl = fieldRef.current;
@@ -112,13 +115,13 @@ export const FieldPrepare = () => {
 		const locations: LocationsType = getPresumptiveBorders(shipRef, fieldRef, isVertical);
 		let isAllowedSetShip = true;
 		for (const [ key, value ] of Object.entries(locations)) {
-			if (value) isAllowedSetShip = false;
+			if (value !== null) isAllowedSetShip = false;
 		}
 		setShootLocations(null);
 		if (!isAllowedSetShip) return;
 		const fieldMatchesIds: Array<string> = getFieldMatches(shipEls, fieldEls);
 		setShipLocation(fieldMatchesIds, +shipRef.id);
-	}, []);
+	};
 
 	const maximumWidth = window.screen.availWidth;
 	const maximumItemSize = 60;
@@ -146,10 +149,6 @@ export const FieldPrepare = () => {
 		};
 		const current = fieldRef.current;
 		const fieldEls = [ ...current.children ];
-		if (!playerShipsLocations && possibleShips) {
-			setShipElsState(possibleShips.map((possibleShip, i) => createShip(null, null, i, false, possibleShip as ShipSizeType, shipSize, shipSize)));
-			return;
-		}
 		const els: Array<ReactElement> = [];
 		possibleShips?.forEach((possibleShip, i) => {
 			const placedShip = placedShips[i];
@@ -158,10 +157,6 @@ export const FieldPrepare = () => {
 			const { x, y }: coordsType = (() => {
 				if (placedShip) {
 					const fieldEl = fieldEls.find(fieldEl => fieldEl.id === placedShip[0]);
-					console.group();
-					console.log('fieldEl', fieldEl);
-					console.log('placedShip', placedShip);
-					console.log('placedShip[0]', placedShip[0]);
 
 					if (fieldEl) {
 						const { x, y } = fieldEl.getBoundingClientRect();
@@ -173,9 +168,6 @@ export const FieldPrepare = () => {
 				}
 				return { x: null, y: null };
 			})();
-			console.log('x', x);
-			console.log('y', y);
-			console.groupEnd();
 			els.push(createShip(x, y, i, isVertical, possibleShip as ShipSizeType, shipSize, shipSize));
 		});
 		setShipElsState(els);
@@ -188,8 +180,8 @@ export const FieldPrepare = () => {
 				<Field isPrepare={true} ref={fieldRef} shootLocations={shootLocations} shipsLocations={playerShipsLocations}/>
 			</div>
 			<div className={ReusableCss.footer}>
-				<div onClick={() => isAllShipsPlaced && startGame()} className={startGameClasses}>Начать игру</div>
-				<div onClick={() => setPlayerShips()} className={buttonClasses}>Сгенерировать случайно</div>
+				<div onClick={startGame} className={startGameClasses}>Начать игру</div>
+				<div onClick={setPlayerShips} className={buttonClasses}>Сгенерировать случайно</div>
 			</div>
 			<div className={FieldPrepareCss.ships_container}>
 				{ shipElsState }
