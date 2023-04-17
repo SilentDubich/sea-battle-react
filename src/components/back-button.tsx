@@ -1,4 +1,3 @@
-import React from 'react';
 import BackButtonCss from './back-button.module.css';
 import ReusableCss from '../reusable/css/reusable.module.css';
 import {gameActions, ModeType} from '../date-base/reducers/game';
@@ -14,6 +13,6 @@ export const BackButton = () => {
 	if (!mode) return null;
 	const classes = `${ BackButtonCss.btn } ${ ReusableCss.button }`;
 	return (
-		<div onClick={back} className={classes}>Назад</div>
+		<button onClick={back} className={classes}>Назад</button>
 	);
 };

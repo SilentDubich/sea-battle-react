@@ -1,4 +1,3 @@
-import React from 'react';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 import {useDispatch} from 'react-redux';
 import {DifficultyType, gameActions} from '../../../date-base/reducers/game';
@@ -10,12 +9,12 @@ export const Difficulty = () => {
 		dispatch(gameActions.setDifficulty(difficulty));
 	};
 	return (
-		<div className={ReusableCss.container}>
+		<>
 			<div className={ReusableCss.main_title}>Выберите уровень сложности</div>
-			<div onClick={() => setDifficulty('EASY')} className={ReusableCss.item}>Легкий</div>
-			<div onClick={() => setDifficulty('NORMAL')} className={ReusableCss.item}>Средний</div>
-			<div onClick={() => setDifficulty('HARD')} className={ReusableCss.item}>Высокий</div>
-			<div onClick={() => setDifficulty('VERY_HARD')} className={ReusableCss.item}>Очень высокий</div>
-		</div>
+			<button onClick={() => setDifficulty('EASY')} className={ReusableCss.item}>Легкий</button>
+			<button onClick={() => setDifficulty('NORMAL')} className={ReusableCss.item}>Средний</button>
+			<button onClick={() => setDifficulty('HARD')} className={ReusableCss.item}>Высокий</button>
+			<button onClick={() => setDifficulty('VERY_HARD')} className={ReusableCss.item}>Очень высокий</button>
+		</>
 	);
 };

@@ -2,6 +2,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	gap: 15px;
 	margin: 100px 0 0 0;
 }
 
@@ -15,38 +16,34 @@
 .main_title {
 	font-size: 2rem;
 	font-weight: 700;
-	margin: 0 0 15px 0;
 	letter-spacing: .25em;
 	text-align: center;
 }
 
 .item {
-	height: 40px;
 	font-size: 1.5rem;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0 5px;
-	border-radius: 20px;
 }
 
-.item:hover {
-	background: #565675;
-}
-
+.item,
 .button {
-	width: 260px;
-	height: 20px;
 	border-radius: 12px;
-	border: 1px solid #565675;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
 	padding: 5px 10px;
+	background: none;
+	border: none;
 }
 
+.button {
+	max-width: 260px;
+	border: 1px solid #565675;
+}
+
+.item:hover,
+.item:focus-visible,
+.button:focus-visible,
 .button:hover {
 	background: #565675;
 }

@@ -85,8 +85,8 @@ export type GameStateType = {
 	fieldSize: FieldSizeType,
 	difficulty: DifficultyType,
 	isStarted: IsStartedType,
-	player?: PlayerType,
-	bot?: BotType,
+	player?: PlayerType | null,
+	bot?: BotType | null,
 	isBlockShoot: boolean,
 	isGameEnd: boolean,
 	winner: PlayerTypes | null
@@ -103,13 +103,12 @@ const defaultState = {
 };
 
 export const playerShootThunk = (field: string): GameThunkType => {
-	debugger
 	return async (dispatch) => {
-		debugger
-		dispatch(gameActions.isBlockShoot(true));
 		const state: AppStateType = store.getState();
 		const { gameReducer } = state;
-		const { player, bot, fieldSize, difficulty } = gameReducer;
+		const { player, bot, fieldSize, difficulty, isStarted } = gameReducer;
+		if (!isStarted) return;
+		dispatch(gameActions.isBlockShoot(true));
 		if (!player || !bot) return;
 		const tempPlayer: PlayerType = JSON.parse(JSON.stringify(player));
 		const tempBot: BotType = JSON.parse(JSON.stringify(bot));
@@ -135,32 +134,6 @@ export const playerShootThunk = (field: string): GameThunkType => {
 		dispatch(gameActions.isBlockShoot(false));
 	};
 };
-
-// const setResultBotShoot = (
-// 	player: PlayerType,
-// 	bot: BotType,
-// 	ship: number | null,
-// 	battleData: BattleDataType,
-// 	shoot: string,
-// 	fieldSize: FieldSizeType,
-// 	difficulty: DifficultyType,
-// 	possibleShoots: Array<string>
-// ): GameThunkType => {
-// 	return async (dispatch) => {
-// 		possibleShoots.splice(possibleShoots.indexOf(shoot), 1);
-// 		if (ship === null) {
-// 			battleData.lastShootCoord = shoot;
-// 			dispatch(gameActions.updatePlayer(bot, 'bot'));
-// 			return;
-// 		}
-// 		const isSunk = hitShip(player, bot, shoot, ship);
-// 		if (isSunk) battleData.firstHitNotSunkShip = null;
-// 		battleData.lastShootCoord = shoot;
-// 		dispatch(gameActions.updatePlayer(bot, 'bot'));
-// 		// if (isGameEnd(fieldSize, battleData.shoots)) return;
-// 		await botShoot(player, bot, fieldSize, difficulty);
-// 	}
-// };
 
 const setResultBotShoot = async (
 	player: PlayerType,
@@ -198,8 +171,8 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 		case 'SET_DIFFICULTY':
 			return { ...state, difficulty: action.difficulty };
 		case 'BACK':
+			if (isStarted) return { ...state, bot: null, player: null, isStarted: false };
 			const [ propToChange, defaultValue ] = (() => {
-				if (isStarted) return [ 'isStarted', false ];
 				if (fieldSize) return [ 'fieldSize', null ];
 				if (difficulty) return [ 'difficulty', null ];
 				if (mode) return [ 'mode', null ];

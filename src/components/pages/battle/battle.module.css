@@ -7,6 +7,13 @@
 	justify-content: center;
 }
 
+.container div {
+	flex: 1;
+	min-height: 480px;
+	max-height: 600px;
+	cursor: pointer;
+}
+
 .container div:first-child {
 	cursor: pointer;
 }

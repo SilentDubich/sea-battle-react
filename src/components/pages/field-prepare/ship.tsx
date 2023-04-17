@@ -1,14 +1,15 @@
 import React, {FC, forwardRef, PointerEventHandler, useEffect, useRef, useState} from 'react';
 import FieldCss from '../../../reusable/components/field/field.module.css';
 import {ShipSizeType} from '../../../date-base/reducers/game';
+import { getItemSize } from '../../../reusable/components/field/field';
+import {useSelector} from 'react-redux';
+import {AppStateType} from '../../../date-base/store';
 
 
 
 type PropsType = {
 	id: number,
 	size: ShipSizeType,
-	width: number,
-	height: number,
 	isVertical: boolean,
 	x?: number | null,
 	y?: number | null,
@@ -17,15 +18,34 @@ type PropsType = {
 };
 
 
-export const Ship: FC<PropsType> = ({ id, size, width, height, isVertical, x, y, moveCallback, endMoveCallback }) => {
+export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, endMoveCallback }) => {
 	const [ shiftX, setShiftX ] = useState<number>(0);
 	const [ shiftY, setShiftY ] = useState<number>(0);
+	const [ width, setWidth ] = useState<number>(0);
+	const [ height, setHeight ] = useState<number>(0);
 	const [ isVerticalValue, setIsVerticalValue ] = useState<boolean>(isVertical);
+	const { fieldSize } = useSelector((state: AppStateType) => {
+		const { fieldSize } = state.gameReducer;
+		return { fieldSize };
+	});
 	const ref: any = useRef();
 
 	useEffect(() => {
 		setIsVerticalValue(isVertical);
 	}, [isVertical]);
+	const resizeShip = () => {
+		const { itemSize } = getItemSize(fieldSize);
+		const width = itemSize * (size ?? 0);
+		setWidth(width);
+		setHeight(itemSize);
+	};
+	useEffect(() => {
+		window.addEventListener('resize', resizeShip);
+		return () => window.removeEventListener('resize', resizeShip);
+	}, [ref.current]);
+	useEffect(() => {
+		resizeShip();
+	}, []);
 
 	useEffect(() => {
 		const current = ref.current;
@@ -104,7 +124,7 @@ export const Ship: FC<PropsType> = ({ id, size, width, height, isVertical, x, y,
 	const classes = `${ isVerticalValue ? FieldCss.vertical_ship : FieldCss.horizontal_ship }`;
 	const shipEls: Array<JSX.Element> = [];
 	for (let i = 0; i < size; i++) {
-		shipEls.push(<div className={FieldCss.ship} style={{ width, height, backgroundColor: 'inherit' }}></div>);
+		shipEls.push(<div className={FieldCss.ship} style={{flex: 1, height: '100%'}}></div>);
 	}
 	return (
 		<div
@@ -112,6 +132,10 @@ export const Ship: FC<PropsType> = ({ id, size, width, height, isVertical, x, y,
 			ref={ref}
 			onPointerDown={setShifts}
 			id={id.toString()}
+			style={{
+				width,
+				height
+			}}
 		>
 			{ shipEls }
 		</div>

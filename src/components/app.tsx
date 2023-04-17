@@ -1,4 +1,3 @@
-import React from 'react';
 import {AppStateType} from '../date-base/store';
 import {BackButton} from './back-button';
 import {Main} from './pages/main/main';
@@ -7,6 +6,7 @@ import {FieldChoose} from './pages/field-choose/field-choose';
 import {FieldPrepare} from './pages/field-prepare/field-prepare';
 import {Battle} from './pages/battle/battle';
 import {useSelector} from 'react-redux';
+import ReusableCss from '../reusable/css/reusable.module.css';
 
 
 export const App = () => {
@@ -24,7 +24,9 @@ export const App = () => {
 	return (
 		<>
 			<BackButton/>
-			{ componentToRender }
+			<div className={ReusableCss.container}>
+				{ componentToRender }
+			</div>
 		</>
 	);
 };

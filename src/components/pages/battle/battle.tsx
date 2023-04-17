@@ -1,4 +1,3 @@
-import React from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {Field} from '../../../reusable/components/field/field';
 import {
@@ -34,14 +33,14 @@ export const Battle = () => {
 		return isBlockShoot ? 'Ход противника' : 'Твой ход';
 	})();
 	return (
-		<div className={`${ ReusableCss.container }`}>
+		<>
 			<div className={ReusableCss.main_title}>{ title }</div>
-			{ winner && <div onClick={() => reset()} className={ReusableCss.button}>Вернуться в меню</div> }
+			{ winner && <button onClick={() => reset()} className={ReusableCss.button}>Вернуться в меню</button> }
 			<div className={`${ BattleCss.container }`}>
 				<Field fieldTitle={'Поле противника'} shootLocations={playerShoots} shootCallback={playerShootThunk}/>
-				<Field fieldTitle={'Твоё поле'} shootLocations={botShoots} shipsLocations={playerShipsLocations} fieldItemSize={45}/>
+				<Field fieldTitle={'Твоё поле'} shootLocations={botShoots} shipsLocations={playerShipsLocations}/>
 			</div>
-		</div>
+		</>
 	)
 };
 
