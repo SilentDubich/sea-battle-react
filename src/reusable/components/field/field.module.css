@@ -27,7 +27,7 @@
 }
 
 .vertical_ship {
-	display: block;
+	flex-direction: column;
 }
 
 .horizontal_ship {

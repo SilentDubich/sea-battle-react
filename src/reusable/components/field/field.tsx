@@ -10,6 +10,7 @@ import React, {
 	useState
 } from 'react';
 import FieldCss from './field.module.css';
+import ReusableCss from '../../../reusable/css/reusable.module.css';
 import {FieldSizeType, getPossibleLocations, ShipsLocationsType, playerShootThunk} from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
 import {useDispatch, useSelector} from 'react-redux';
@@ -21,6 +22,7 @@ type PropsType = {
 	shipsLocations?: ShipsLocationsType | null,
 	fieldItemSize?: number,
 	shootCallback?: Function,
+	disabledBtns?: boolean,
 	shootLocations?: {
 		[key: string]: number | null
 	} | null
@@ -41,21 +43,20 @@ export const getItemSize = (fieldSize: FieldSizeType | null): { maxFieldWidth: n
 	};
 };
 
-export const Field:FC<PropsType> = ({shipsLocations, shootLocations}) => {
-	const resizeRef:any = useRef();
-	const fieldRef: any = useRef();
+export const Field = forwardRef<any, PropsType>(({shipsLocations, shootLocations, disabledBtns= false, fieldTitle}, ref) => {
+	const resizeRef: any = useRef();
 	const dispatch = useDispatch();
 	const [ fieldItemEls, setFieldItemEls ] = useState<Array<ReactElement>>([]);
 	const resizeObserver = useMemo(() => {
 		return new ResizeObserver(() => {
 			setFieldItemEls(resize());
 		});
-	}, [resizeRef.current]);
+	}, [resizeRef.current, shipsLocations]);
 
 	useEffect(() => {
 		if (resizeRef.current) resizeObserver.observe(resizeRef.current);
 		return () => resizeObserver.disconnect();
-	}, [resizeRef.current]);
+	}, [resizeRef.current, shipsLocations]);
 
 	useEffect(() => {
 		setFieldItemEls(resize());
@@ -90,19 +91,21 @@ export const Field:FC<PropsType> = ({shipsLocations, shootLocations}) => {
 					id={location}
 					className={classes}
 					tabIndex={tabindex}
-					style={{ width: itemSize, height: itemSize }}
+					disabled={disabledBtns}
+					style={{ width: itemSize, height: itemSize, cursor: disabledBtns ? 'default' : 'pointer' }}
 				/>
 			)
 		});
 	};
 	return (
 		<div ref={resizeRef} style={{ width: '100%' }}>
-			<div ref={fieldRef} style={{ width: maxFieldWidth, margin: '0 auto', display: 'flex', flexWrap: 'wrap' }}>
+			{ fieldTitle && <div className={ReusableCss.main_title}>{ fieldTitle }</div> }
+			<div ref={ref} style={{ width: maxFieldWidth, margin: '0 auto', display: 'flex', flexWrap: 'wrap' }}>
 				{ fieldItemEls }
 			</div>
 		</div>
 	)
-};
+});
 
 
 // export const Field = forwardRef<any, PropsType>(({

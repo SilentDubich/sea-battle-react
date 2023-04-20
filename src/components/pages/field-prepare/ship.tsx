@@ -1,4 +1,4 @@
-import React, {FC, forwardRef, PointerEventHandler, useEffect, useRef, useState} from 'react';
+import React, {FC, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import FieldCss from '../../../reusable/components/field/field.module.css';
 import {ShipSizeType} from '../../../date-base/reducers/game';
 import { getItemSize } from '../../../reusable/components/field/field';
@@ -19,10 +19,9 @@ type PropsType = {
 
 
 export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, endMoveCallback }) => {
-	const [ shiftX, setShiftX ] = useState<number>(0);
-	const [ shiftY, setShiftY ] = useState<number>(0);
 	const [ width, setWidth ] = useState<number>(0);
 	const [ height, setHeight ] = useState<number>(0);
+	const [ itemSize, setItemSize ] = useState<number>(0);
 	const [ isVerticalValue, setIsVerticalValue ] = useState<boolean>(isVertical);
 	const { fieldSize } = useSelector((state: AppStateType) => {
 		const { fieldSize } = state.gameReducer;
@@ -36,16 +35,24 @@ export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, 
 	const resizeShip = () => {
 		const { itemSize } = getItemSize(fieldSize);
 		const width = itemSize * (size ?? 0);
-		setWidth(width);
-		setHeight(itemSize);
+		if (isVerticalValue) {
+			setWidth(itemSize);
+			setHeight(width);
+		}
+		else {
+			setWidth(width);
+			setHeight(itemSize);
+		}
+		setItemSize(itemSize);
 	};
 	useEffect(() => {
 		window.addEventListener('resize', resizeShip);
 		return () => window.removeEventListener('resize', resizeShip);
 	}, [ref.current]);
-	useEffect(() => {
+
+	useLayoutEffect(() => {
 		resizeShip();
-	}, []);
+	}, [isVerticalValue]);
 
 	useEffect(() => {
 		const current = ref.current;
@@ -64,9 +71,6 @@ export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, 
 			setIsVerticalValue(false);
 		}
 	}, [ x, y ]);
-	const calculateShift = (clientCoord: number, shipCoord: number) => {
-		return clientCoord - shipCoord;
-	};
 	const getEvents = (pointerType: string): { eventMove: 'pointermove' | 'touchmove', eventEnd: 'pointerup' | 'touchend' } => {
 		const isDesktop = pointerType === 'mouse';
 		const eventMove = isDesktop ? 'pointermove' : 'touchmove';
@@ -75,33 +79,23 @@ export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, 
 	};
 	const setShifts = (e: any) => {
 		const current = ref.current;
-		const { x, y } = current.getBoundingClientRect();
-		const { clientX, clientY } = e;
-		const shiftX = calculateShift(clientX, x);
-		const shiftY = calculateShift(clientY, y);
-		setShiftX(shiftX);
-		setShiftY(shiftY);
 		current.style.position = 'absolute';
 		const { pointerType } = e;
 		const { eventMove, eventEnd } = getEvents(pointerType);
 		window.addEventListener(eventMove, drag);
 		window.addEventListener(eventEnd, dragEnd);
-		current.onWheel = switchIsVertical;
 	};
-	let tempVertical = isVertical;
 	const switchIsVertical = () => {
-		const current = ref.current;
-		setIsVerticalValue(!tempVertical);
-		tempVertical = !tempVertical;
-		moveCallback && moveCallback(current, tempVertical, size);
+		setIsVerticalValue(value => !value);
+		setTimeout(() => moveCallback?.(ref.current), 0);
 	};
 	const drag = (e: any) => {
 		const current = ref.current;
 		const touches = e.targetTouches && e.targetTouches[0];
 		const { pageX, pageY } = touches || e;
-		current.style.left = `${ pageX - shiftX }px`;
-		current.style.top = `${ pageY - shiftY }px`;
-		moveCallback && moveCallback(current, tempVertical, size);
+		current.style.left = `${ pageX }px`;
+		current.style.top = `${ pageY }px`;
+		moveCallback?.(current);
 	};
 	const dragEnd = (e: any) => {
 		const current = ref.current;
@@ -110,8 +104,7 @@ export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, 
 		const { eventMove, eventEnd } = getEvents(pointerType);
 		window.removeEventListener(eventMove, drag);
 		window.removeEventListener(eventEnd, dragEnd);
-		current.onWheel = null;
-		endMoveCallback && endMoveCallback(current, tempVertical);
+		endMoveCallback?.(current);
 		if (x && y) {
 			current.style.left = `${ x }px`;
 			current.style.top = `${ y }px`;
@@ -124,13 +117,15 @@ export const Ship: FC<PropsType> = ({ id, size, isVertical, x, y, moveCallback, 
 	const classes = `${ isVerticalValue ? FieldCss.vertical_ship : FieldCss.horizontal_ship }`;
 	const shipEls: Array<JSX.Element> = [];
 	for (let i = 0; i < size; i++) {
-		shipEls.push(<div className={FieldCss.ship} style={{flex: 1, height: '100%'}}></div>);
+		shipEls.push(<div className={FieldCss.ship} style={{flex: 1, height: itemSize, backgroundColor: 'inherit'}}></div>);
 	}
 	return (
 		<div
 			className={classes}
 			ref={ref}
 			onPointerDown={setShifts}
+			onWheel={switchIsVertical}
+			onClick={(e: any) => e.nativeEvent.pointerType !== 'mouse' && x && y && setIsVerticalValue(value => !value)}
 			id={id.toString()}
 			style={{
 				width,

@@ -38,7 +38,7 @@ export const Battle = () => {
 			{ winner && <button onClick={() => reset()} className={ReusableCss.button}>Вернуться в меню</button> }
 			<div className={`${ BattleCss.container }`}>
 				<Field fieldTitle={'Поле противника'} shootLocations={playerShoots} shootCallback={playerShootThunk}/>
-				<Field fieldTitle={'Твоё поле'} shootLocations={botShoots} shipsLocations={playerShipsLocations}/>
+				<Field fieldTitle={'Твоё поле'} disabledBtns={true} shootLocations={botShoots} shipsLocations={playerShipsLocations}/>
 			</div>
 		</>
 	)

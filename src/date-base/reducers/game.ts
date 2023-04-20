@@ -172,8 +172,8 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 			return { ...state, difficulty: action.difficulty };
 		case 'BACK':
 			if (isStarted) return { ...state, bot: null, player: null, isStarted: false };
+			if (fieldSize) return { ...state, player: null, fieldSize: null };
 			const [ propToChange, defaultValue ] = (() => {
-				if (fieldSize) return [ 'fieldSize', null ];
 				if (difficulty) return [ 'difficulty', null ];
 				if (mode) return [ 'mode', null ];
 				return [ null, null ];
@@ -330,9 +330,8 @@ const hitShip = (target: PlayerType | BotType, shooter: PlayerType | BotType, fi
 	hits.push(field);
 	const isSunk = hits.length === shipInShips.size;
 	if (isSunk) {
-		const isVertical = isVerticalShip(hits[0], hits[1]);
 		const sortedHits = hits.sort((a, b) => +a - (+b));
-		const borders = getBorders(sortedHits, isVertical);
+		const borders = getBorders(sortedHits);
 		const isBot = (obj: any): obj is BotType => {
 			return obj.hasOwnProperty('battleData');
 		};
@@ -453,7 +452,7 @@ const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fi
 		return variants.map(variant => `${ rowKey }${ variant }`);
 	})();
 
-	const borders: Array<string> = getBorders(locationToPlace, isVertical);
+	const borders: Array<string> = getBorders(locationToPlace);
 
 	const locationsToDelete = [ ...borders, ...locationToPlace ];
 	locationsToDelete.forEach(locationToDelete => {
@@ -463,9 +462,11 @@ const createShip = (shipSize: ShipSizeType, possibleLocations: Array<string>, fi
 	return locationToPlace;
 };
 
-export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
+
+export const getBorders = (locationToPlace: Array<string>) => {
 	const borders: Array<string> = [];
 	if (!locationToPlace.length) return borders;
+	const isVertical = isVerticalShip(locationToPlace[0], locationToPlace[1]);
 	const bumperLocations: Array<string> = [];
 	const firstLocation = locationToPlace[0];
 	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;
@@ -481,7 +482,7 @@ export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) 
 	};
 	const getLocationPart = (locationPartForVertical: number, locationPartForHorizontal: number) => {
 		return isVertical ? locationPartForVertical : locationPartForHorizontal;
-	}
+	};
 	const locations: Array<string> = [];
 	const firstBumperRow = getLocationPart(+firstLocation[0] - 1, +rowNumber);
 	const lastBumperRow = getLocationPart(+lastLocation[0] + 1, +rowNumber);
@@ -514,6 +515,59 @@ export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) 
 	});
 	return borders;
 };
+
+// export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
+// 	const borders: Array<string> = [];
+// 	if (!locationToPlace.length) return borders;
+// 	const bumperLocations: Array<string> = [];
+// 	const firstLocation = locationToPlace[0];
+// 	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;
+// 	const rowNumber = firstLocation[0];
+// 	const colNumber = firstLocation[1];
+// 	console.log(locationToPlace)
+// 	const isValid = (row: number, col: number) => {
+// 		if (row < 0 || row >= 10) return false;
+// 		if (col < 0 || col >= 10) return false;
+// 		return true;
+// 	};
+// 	const pushLocation = (row: number, col: number, arr: Array<string>) => {
+// 		if (isValid(row, col)) arr.push(`${ row }${ col }`);
+// 	};
+// 	const getLocationPart = (locationPartForVertical: number, locationPartForHorizontal: number) => {
+// 		return isVertical ? locationPartForVertical : locationPartForHorizontal;
+// 	};
+// 	const locations: Array<string> = [];
+// 	const firstBumperRow = getLocationPart(+firstLocation[0] - 1, +rowNumber);
+// 	const lastBumperRow = getLocationPart(+lastLocation[0] + 1, +rowNumber);
+//
+// 	const firstBumperCol = isVertical ? +colNumber : +firstLocation[1] - 1;
+// 	const lastBumperCol = isVertical ? +colNumber : +lastLocation[1] + 1;
+// 	pushLocation(firstBumperRow, firstBumperCol, locations);
+// 	pushLocation(lastBumperRow, lastBumperCol, locations);
+//
+// 	bumperLocations.push(...locations);
+// 	borders.push(...locations);
+// 	const allLocations: Array<string> = [ ...locationToPlace, ...bumperLocations ];
+// 	allLocations.forEach((locationCoordination, i) => {
+// 		const rowNumber = +locationCoordination[0];
+// 		const colNumber = +locationCoordination[1];
+//
+// 		const colNumberLeft = colNumber - 1;
+// 		const colNumberRight = colNumber + 1;
+// 		const rowNumberTop = rowNumber - 1;
+// 		const rowNumberBottom = rowNumber + 1;
+// 		const bordersToPush: Array<string> = [];
+// 		const firstRow = getLocationPart(rowNumber, rowNumberTop);
+// 		const lastRow = getLocationPart(rowNumber, rowNumberBottom);
+//
+// 		const firstCol = getLocationPart(colNumberLeft, colNumber);
+// 		const lastCol = getLocationPart(colNumberRight, colNumber);
+// 		pushLocation(firstRow, firstCol, bordersToPush);
+// 		pushLocation(lastRow, lastCol, bordersToPush);
+// 		borders.push(...bordersToPush);
+// 	});
+// 	return borders;
+// };
 
 type LocationsMapType = {
 	[key:number]: Array<number>
