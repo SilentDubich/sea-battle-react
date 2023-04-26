@@ -1,12 +1,13 @@
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 import {useDispatch} from 'react-redux';
 import {FieldSizeType, gameActions} from '../../../date-base/reducers/game';
+import {useCallback} from 'react';
 
-export const FieldChoose = () => {
+export default () => {
 	const dispatch = useDispatch();
-	const setFieldSize = (size: FieldSizeType) => {
+	const setFieldSize = useCallback((size: FieldSizeType) => {
 		dispatch(gameActions.setFieldSize(size));
-	};
+	}, []);
 	return (
 		<>
 			<div className={ReusableCss.main_title}>Выберите размер поля</div>

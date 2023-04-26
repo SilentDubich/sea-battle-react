@@ -43,7 +43,16 @@ export const getItemSize = (fieldSize: FieldSizeType | null): { maxFieldWidth: n
 	};
 };
 
-export const Field = forwardRef<any, PropsType>(({shipsLocations, shootLocations, disabledBtns= false, fieldTitle}, ref) => {
+export const Field = forwardRef<any, PropsType>(
+	(
+		{
+			shipsLocations,
+			shootLocations,
+			disabledBtns= false,
+			fieldTitle
+		},
+		ref
+	) => {
 	const resizeRef: any = useRef();
 	const dispatch = useDispatch();
 	const [ fieldItemEls, setFieldItemEls ] = useState<Array<ReactElement>>([]);

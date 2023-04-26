@@ -107,15 +107,14 @@ export const playerShootThunk = (field: string): GameThunkType => {
 		const state: AppStateType = store.getState();
 		const { gameReducer } = state;
 		const { player, bot, fieldSize, difficulty, isStarted } = gameReducer;
-		if (!isStarted) return;
+		if (!isStarted || !player || !bot) return;
 		dispatch(gameActions.isBlockShoot(true));
-		if (!player || !bot) return;
 		const tempPlayer: PlayerType = JSON.parse(JSON.stringify(player));
 		const tempBot: BotType = JSON.parse(JSON.stringify(bot));
 		const botShips = tempBot.shipsParams.locations;
 		if (!tempPlayer.shoots || !tempPlayer.hasOwnProperty('shoots')) tempPlayer.shoots = {};
 		if (tempPlayer.shoots.hasOwnProperty(field)) return;
-		const ship = botShips[field] !== undefined ? botShips[field] : null;
+		const ship = botShips[field] ?? null;
 		const playerType: PlayerTypes = 'player';
 		tempPlayer.shoots[field] = ship;
 		if (ship !== null) {
@@ -225,7 +224,7 @@ export const gameReducer = (state: GameStateType = defaultState, action: GameAct
 		default:
 			return state;
 	}
-}
+};
 
 const botShoot = async (player: PlayerType, bot: BotType, fieldSize: FieldSizeType, difficulty: DifficultyType) => {
 	if (!fieldSize) return;
@@ -516,58 +515,6 @@ export const getBorders = (locationToPlace: Array<string>) => {
 	return borders;
 };
 
-// export const getBorders = (locationToPlace: Array<string>, isVertical: boolean) => {
-// 	const borders: Array<string> = [];
-// 	if (!locationToPlace.length) return borders;
-// 	const bumperLocations: Array<string> = [];
-// 	const firstLocation = locationToPlace[0];
-// 	const lastLocation = locationToPlace.length > 1 ? locationToPlace[locationToPlace.length - 1] : firstLocation;
-// 	const rowNumber = firstLocation[0];
-// 	const colNumber = firstLocation[1];
-// 	console.log(locationToPlace)
-// 	const isValid = (row: number, col: number) => {
-// 		if (row < 0 || row >= 10) return false;
-// 		if (col < 0 || col >= 10) return false;
-// 		return true;
-// 	};
-// 	const pushLocation = (row: number, col: number, arr: Array<string>) => {
-// 		if (isValid(row, col)) arr.push(`${ row }${ col }`);
-// 	};
-// 	const getLocationPart = (locationPartForVertical: number, locationPartForHorizontal: number) => {
-// 		return isVertical ? locationPartForVertical : locationPartForHorizontal;
-// 	};
-// 	const locations: Array<string> = [];
-// 	const firstBumperRow = getLocationPart(+firstLocation[0] - 1, +rowNumber);
-// 	const lastBumperRow = getLocationPart(+lastLocation[0] + 1, +rowNumber);
-//
-// 	const firstBumperCol = isVertical ? +colNumber : +firstLocation[1] - 1;
-// 	const lastBumperCol = isVertical ? +colNumber : +lastLocation[1] + 1;
-// 	pushLocation(firstBumperRow, firstBumperCol, locations);
-// 	pushLocation(lastBumperRow, lastBumperCol, locations);
-//
-// 	bumperLocations.push(...locations);
-// 	borders.push(...locations);
-// 	const allLocations: Array<string> = [ ...locationToPlace, ...bumperLocations ];
-// 	allLocations.forEach((locationCoordination, i) => {
-// 		const rowNumber = +locationCoordination[0];
-// 		const colNumber = +locationCoordination[1];
-//
-// 		const colNumberLeft = colNumber - 1;
-// 		const colNumberRight = colNumber + 1;
-// 		const rowNumberTop = rowNumber - 1;
-// 		const rowNumberBottom = rowNumber + 1;
-// 		const bordersToPush: Array<string> = [];
-// 		const firstRow = getLocationPart(rowNumber, rowNumberTop);
-// 		const lastRow = getLocationPart(rowNumber, rowNumberBottom);
-//
-// 		const firstCol = getLocationPart(colNumberLeft, colNumber);
-// 		const lastCol = getLocationPart(colNumberRight, colNumber);
-// 		pushLocation(firstRow, firstCol, bordersToPush);
-// 		pushLocation(lastRow, lastCol, bordersToPush);
-// 		borders.push(...bordersToPush);
-// 	});
-// 	return borders;
-// };
 
 type LocationsMapType = {
 	[key:number]: Array<number>

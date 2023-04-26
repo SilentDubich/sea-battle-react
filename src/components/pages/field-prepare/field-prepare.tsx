@@ -19,7 +19,7 @@ const locationsSelector = (state: AppStateType) => state.gameReducer.player?.shi
 const fieldSizeSelector = (state: AppStateType) => state.gameReducer.fieldSize;
 
 
-export const FieldPrepare = () => {
+export default () => {
 	const fieldRowsRef: any = useRef();
 	const dispatch = useDispatch();
 	const setPlayerShips = () => {
@@ -160,7 +160,7 @@ export const FieldPrepare = () => {
 
 	return (
 		<>
-			<Field fieldTitle={'Расставьте корабли'} shootLocations={shootLocations} ref={fieldRowsRef}/>
+			<Field disabledBtns={true} fieldTitle={'Расставьте корабли'} shootLocations={shootLocations} ref={fieldRowsRef}/>
 			<div className={ReusableCss.footer}>
 				<button onClick={startGame} className={startGameClasses}>Начать игру</button>
 				<button onClick={setPlayerShips} className={buttonClasses}>Сгенерировать случайно</button>

@@ -1,13 +1,14 @@
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 import {useDispatch} from 'react-redux';
 import {DifficultyType, gameActions} from '../../../date-base/reducers/game';
+import {useCallback} from 'react';
 
 
-export const Difficulty = () => {
+export default () => {
 	const dispatch = useDispatch();
-	const setDifficulty = (difficulty: DifficultyType) => {
+	const setDifficulty = useCallback((difficulty: DifficultyType) => {
 		dispatch(gameActions.setDifficulty(difficulty));
-	};
+	}, []);
 	return (
 		<>
 			<div className={ReusableCss.main_title}>Выберите уровень сложности</div>

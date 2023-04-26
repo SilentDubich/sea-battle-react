@@ -2,15 +2,14 @@ import {useDispatch, useSelector} from 'react-redux';
 import {Field} from '../../../reusable/components/field/field';
 import {
 	gameActions,
-	playerShootThunk,
-	ShipsLocationsType
+	playerShootThunk
 } from '../../../date-base/reducers/game';
 import {AppStateType} from '../../../date-base/store';
 import BattleCss from './battle.module.css';
 import ReusableCss from '../../../reusable/css/reusable.module.css';
 
 
-export const Battle = () => {
+export default () => {
 	const { player, bot, winner, isBlockShoot } = useSelector((state: AppStateType) => {
 		const { player, bot, winner, isBlockShoot } = state.gameReducer;
 		return {
@@ -21,12 +20,6 @@ export const Battle = () => {
 		};
 	});
 	const dispatch = useDispatch();
-	const reset = () => {
-		dispatch(gameActions.reset());
-	};
-	const playerShipsLocations: ShipsLocationsType | null = player ? player.shipsParams.locations : null;
-	const playerShoots = player && player.shoots ? player.shoots : null;
-	const botShoots = bot && bot.battleData && bot.battleData.shoots ? bot.battleData.shoots : null;
 	const title: string = (() => {
 		if (winner === 'player') return 'Вы победили';
 		if (winner === 'bot') return 'Противник победил';
@@ -35,10 +28,19 @@ export const Battle = () => {
 	return (
 		<>
 			<div className={ReusableCss.main_title}>{ title }</div>
-			{ winner && <button onClick={() => reset()} className={ReusableCss.button}>Вернуться в меню</button> }
+			{ winner && <button onClick={() => dispatch(gameActions.reset())} className={ReusableCss.button}>Вернуться в меню</button> }
 			<div className={`${ BattleCss.container }`}>
-				<Field fieldTitle={'Поле противника'} shootLocations={playerShoots} shootCallback={playerShootThunk}/>
-				<Field fieldTitle={'Твоё поле'} disabledBtns={true} shootLocations={botShoots} shipsLocations={playerShipsLocations}/>
+				<Field
+					fieldTitle={'Поле противника'}
+					shootLocations={player?.shoots || null}
+					shootCallback={playerShootThunk}
+				/>
+				<Field
+					fieldTitle={'Твоё поле'}
+					disabledBtns={true}
+					shootLocations={bot?.battleData?.shoots || null}
+					shipsLocations={player?.shipsParams?.locations || null}
+				/>
 			</div>
 		</>
 	)

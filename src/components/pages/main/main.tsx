@@ -3,7 +3,7 @@ import {useDispatch} from 'react-redux';
 import {gameActions} from '../../../date-base/reducers/game';
 
 
-export const Main = () => {
+export default () => {
 	const dispatch = useDispatch();
 	return (
 		<>
